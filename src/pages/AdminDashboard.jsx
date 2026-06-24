@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { C } from "../data/content";
 import { MOCK_EVENTS } from "../data/mockEvents";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { logout, adminEmail } = useAuth();
   const [activeTab, setActiveTab] = useState("contacts");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Mock data
   const [contacts, setContacts] = useState([
@@ -16,26 +17,18 @@ export default function AdminDashboard() {
 
   const [proposals, setProposals] = useState([
     { id: "1", company_name: "TechCorp", event_type: "Corporate Sports League", participants: "100", budget: "500000", description: "Annual sports day", timestamp: "2025-01-15T09:00:00Z" },
-    { id: "2", company_name: "Global Schools", event_type: "School Championship", participants: "500", budget: "200000", description: "Inter-school tournament", timestamp: "2025-01-14T11:30:00Z" },
+    { id: "2", company_name: "Global Schools", event_type: "School Championship", participants: "500", budget: "200000", description: "Inter-school tournament", timestamp: "2025-01-14T11:30:00Z" }
   ]);
 
   const [events, setEvents] = useState(MOCK_EVENTS);
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
 
-  useEffect(() => {
-    const auth = localStorage.getItem("admin_authenticated");
-    if (!auth) {
-      navigate("/admin/login");
-    } else {
-      setIsAuthenticated(true);
-    }
-  }, [navigate]);
-
   const handleLogout = () => {
-    localStorage.removeItem("admin_authenticated");
-    localStorage.removeItem("admin_email");
-    navigate("/admin/login");
+    if (window.confirm("Are you sure you want to logout?")) {
+      logout();
+      navigate("/admin/login");
+    }
   };
 
   const handleDeleteEvent = (id) => {
@@ -81,16 +74,20 @@ export default function AdminDashboard() {
     setEditingEvent(null);
   };
 
-  if (!isAuthenticated) return null;
-
   return (
     <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>
       {/* Header */}
       <div style={{ background: "rgba(229,9,20,0.1)", borderBottom: "1px solid rgba(229,9,20,0.2)", padding: "16px 5%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div className="bebas" style={{ fontSize: "1.5rem" }}>
-          SPORT<span style={{ color: C.red }}>X</span>TREME ADMIN
+        <div>
+          <div className="bebas" style={{ fontSize: "1.5rem" }}>
+            SPORT<span style={{ color: C.red }}>X</span>TREME ADMIN
+          </div>
+          <div style={{ fontSize: "0.75rem", color: C.gray, marginTop: 4 }}>Logged in as: {adminEmail}</div>
         </div>
-        <button onClick={handleLogout} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", cursor: "pointer", fontSize: "0.85rem" }}>
+        <button onClick={handleLogout} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", cursor: "pointer", fontSize: "0.85rem", transition: "all 0.3s" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.red; e.currentTarget.style.color = C.red; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#fff"; }}
+        >
           LOGOUT
         </button>
       </div>
@@ -240,7 +237,7 @@ export default function AdminDashboard() {
                     <input name="location" defaultValue={editingEvent?.location} placeholder="Location" style={{ padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
                     <input name="participants" defaultValue={editingEvent?.participants} placeholder="Participants" style={{ padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
                     <input name="event_date" defaultValue={editingEvent?.event_date} type="date" placeholder="Event Date" style={{ padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" }} />
-                    <textarea name="description" defaultValue={editingEvent?.description} placeholder="Description" style={{ gridColumn: "1 / -1", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", minHeight: 80 }} />
+                    <textarea name="description" defaultValue={editingEvent?.description} placeholder="Description" style={{ gridColumn: "1 / -1", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", minHeight: "100px" }} />
                     <div style={{ gridColumn: "1 / -1", display: "flex", gap: 12 }}>
                       <button type="submit" className="red-btn" style={{ padding: "12px 24px" }}>
                         {editingEvent ? "UPDATE EVENT" : "ADD EVENT"}
@@ -274,10 +271,10 @@ export default function AdminDashboard() {
                         <td style={{ padding: "16px", fontSize: "0.9rem" }}>{event.location}</td>
                         <td style={{ padding: "16px", fontSize: "0.85rem", color: C.gray }}>{event.event_date}</td>
                         <td style={{ padding: "16px" }}>
-                          <button onClick={() => handleEditEvent(event)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "6px 12px", cursor: "pointer", fontSize: "0.8rem", marginRight: 8 }}>
+                          <button onClick={() => handleEditEvent(event)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "6px 12px", cursor: "pointer", marginRight: 8, fontSize: "0.75rem" }}>
                             EDIT
                           </button>
-                          <button onClick={() => handleDeleteEvent(event.id)} style={{ background: "none", border: "1px solid rgba(229,9,20,0.3)", color: C.red, padding: "6px 12px", cursor: "pointer", fontSize: "0.8rem" }}>
+                          <button onClick={() => handleDeleteEvent(event.id)} style={{ background: "none", border: "1px solid rgba(229,9,20,0.3)", color: C.red, padding: "6px 12px", cursor: "pointer", fontSize: "0.75rem" }}>
                             DELETE
                           </button>
                         </td>
