@@ -1,0 +1,304 @@
+/* ─── RESET & BASE ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: #050505;
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #E50914; }
+
+/* ─── TYPOGRAPHY HELPERS ─── */
+.bebas {
+  font-family: 'Bebas Neue', cursive !important;
+  letter-spacing: 0.03em;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229,9,20,0); }
+  50%       { box-shadow: 0 0 24px 6px rgba(229,9,20,0.25); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.afu  { animation: fadeUp 0.8s ease both; }
+.d1   { animation-delay: 0.15s; }
+.d2   { animation-delay: 0.30s; }
+.d3   { animation-delay: 0.45s; }
+.d4   { animation-delay: 0.60s; }
+
+/* ─── INTERACTIVE CARDS ─── */
+.card-lift {
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+.card-lift:hover {
+  transform: translateY(-6px);
+  border-color: rgba(229,9,20,0.4) !important;
+  box-shadow: 0 20px 48px rgba(229,9,20,0.1);
+}
+
+/* ─── BUTTONS ─── */
+.red-btn {
+  background: #E50914;
+  color: #fff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  padding: 14px 32px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s, transform 0.2s;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.red-btn:hover {
+  box-shadow: 0 0 28px rgba(229,9,20,0.5);
+  transform: scale(1.02);
+}
+.red-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transition: left 0.5s;
+}
+.red-btn:hover::after { left: 120%; }
+
+.out-btn {
+  background: transparent;
+  color: #fff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  padding: 12px 32px;
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  transition: all 0.3s;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.out-btn:hover {
+  border-color: #E50914;
+  color: #E50914;
+}
+
+/* ─── NAV LINKS ─── */
+.nav-a {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: color 0.3s;
+  position: relative;
+}
+.nav-a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #E50914;
+  transition: width 0.3s;
+}
+.nav-a:hover { color: #fff; }
+.nav-a:hover::after { width: 100%; }
+
+/* ─── SPORT TABS ─── */
+.sport-tab {
+  background: none;
+  border: none;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.sport-tab.on {
+  color: #fff;
+  border-bottom-color: #E50914;
+}
+.sport-tab:not(.on) { color: #A1A1AA; }
+.sport-tab:hover:not(.on) { color: #fff; }
+
+/* ─── FORM FIELDS ─── */
+.form-f {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  padding: 13px 16px;
+  font-family: Inter, sans-serif;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.3s, background 0.3s;
+  box-sizing: border-box;
+}
+.form-f:focus {
+  border-color: #E50914;
+  background: rgba(229,9,20,0.04);
+}
+.form-f::placeholder { color: rgba(255,255,255,0.3); }
+.form-f option { background: #0d0d0d; }
+
+/* ─── FOOTER LINKS ─── */
+.flink {
+  display: block;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.flink:hover { color: #E50914; }
+
+/* ─── SOCIAL BUTTONS ─── */
+.sb {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: #A1A1AA;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.sb:hover {
+  border-color: #E50914;
+  color: #E50914;
+}
+
+/* ─── TECH CARDS ─── */
+.tech-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+.tech-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: #E50914;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+.tech-card:hover::before { transform: scaleX(1); }
+.tech-card:hover {
+  background: rgba(229,9,20,0.04);
+  border-color: rgba(229,9,20,0.2);
+  transform: translateY(-4px);
+}
+
+/* ─── EYEBROW LABEL ─── */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #E50914;
+  margin-bottom: 16px;
+}
+.eyebrow::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: #E50914;
+}
+
+/* ─── WHY-CARDS ─── */
+.wcard {
+  background: #050505;
+  padding: 36px 28px;
+  position: relative;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+.wcard:hover { background: rgba(229,9,20,0.04); }
+
+/* ─── SPORT GRID ITEM HOVER ─── */
+.sport-item {
+  padding: 18px 20px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.sport-item:hover,
+.sport-item.active {
+  border-color: rgba(229,9,20,0.35);
+  background: rgba(229,9,20,0.06);
+}
+.sport-item .sport-label {
+  color: #A1A1AA;
+  transition: color 0.3s;
+}
+.sport-item:hover .sport-label,
+.sport-item.active .sport-label {
+  color: #ffffff;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .dn-mob { display: none !important; }
+  .g2     { grid-template-columns: 1fr !important; }
+  .g3     { grid-template-columns: 1fr !important; }
+  .g4     { grid-template-columns: repeat(2, 1fr) !important; }
+  .fg     { grid-template-columns: 1fr 1fr !important; }
+  .jgrid  { display: flex !important; flex-wrap: wrap !important; }
+  .jgrid > div {
+    min-width: calc(50% - 8px) !important;
+    flex: 0 0 calc(50% - 8px) !important;
+  }
+}
+@media (min-width: 769px) {
+  .dn-desk { display: none !important; }
+}
