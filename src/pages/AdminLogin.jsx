@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { C } from "../data/content";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,18 +16,17 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
 
-    // Simulate authentication
+    // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Demo credentials (any email/password works for demo)
-    if (email && password) {
-      localStorage.setItem("admin_authenticated", "true");
-      localStorage.setItem("admin_email", email);
+    const result = login(email, password);
+    
+    if (result.success) {
       navigate("/admin/dashboard");
     } else {
-      setError("Please enter email and password");
+      setError(result.error || "Login failed");
     }
-
+    
     setLoading(false);
   };
 
@@ -99,7 +100,9 @@ export default function AdminLogin() {
         </div>
 
         <div style={{ marginTop: 24, textAlign: "center", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-          Demo: Enter any email and password to access
+          <p>Use environment variables:</p>
+          <p>VITE_ADMIN_EMAIL</p>
+          <p>VITE_ADMIN_PASSWORD</p>
         </div>
       </div>
     </div>
