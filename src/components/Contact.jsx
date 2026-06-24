@@ -12,8 +12,7 @@ export default function Contact() {
       const el = document.getElementById("contact");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       setActiveTab("proposal");
-      // brief delay then close "modal" so next trigger works
-      setTimeout(() => closeModal(), 600);
+      closeModal();
     }
   }, [activeModal, closeModal]);
 
@@ -247,6 +246,7 @@ export default function Contact() {
                   onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
                 />
                 <input
+                  type="tel"
                   className="form-f"
                   placeholder="Your Phone"
                   value={contactData.phone}
@@ -317,6 +317,7 @@ export default function Contact() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <input
+                  type="number"
                   className="form-f"
                   placeholder="Expected Number of Participants"
                   value={proposalData.participants}
@@ -324,6 +325,7 @@ export default function Contact() {
                   onChange={(e) => setProposalData({ ...proposalData, participants: e.target.value })}
                 />
                 <input
+                  type="number"
                   className="form-f"
                   placeholder="Expected Budget"
                   value={proposalData.budget}
@@ -354,4 +356,3 @@ export default function Contact() {
     </section>
   );
 }
-
