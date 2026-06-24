@@ -157,7 +157,7 @@ export default function SponsorModal() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <input {...inp} type="email" placeholder="Email Address *" value={data.email}
                   onChange={(e) => setData({ ...data, email: e.target.value })} />
-                <input {...inp} placeholder="Phone Number" value={data.phone}
+                <input {...inp} type="tel" placeholder="Phone Number" value={data.phone}
                   onChange={(e) => setData({ ...data, phone: e.target.value })} />
               </div>
 
@@ -172,7 +172,7 @@ export default function SponsorModal() {
                   <option value="In-Kind Sponsor">In-Kind Sponsor</option>
                   <option value="Other">Other</option>
                 </select>
-                <input {...inp} placeholder="Expected Budget (₹)" value={data.budget}
+                <input {...inp} type="number" placeholder="Expected Budget (₹)" value={data.budget}
                   onChange={(e) => setData({ ...data, budget: e.target.value })} />
               </div>
 
