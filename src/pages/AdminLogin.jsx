@@ -16,10 +16,7 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const result = login(email, password);
+    const result = await login(email, password);
     
     if (result.success) {
       navigate("/admin/dashboard");

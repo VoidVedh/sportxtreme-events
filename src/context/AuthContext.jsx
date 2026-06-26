@@ -1,63 +1,75 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
+const ADMIN_EMAIL = "sportxtremeevents@gmail.com";
 
 /**
- * Admin authentication using environment-based credentials.
- * In production, replace with real Supabase auth.
+ * Admin authentication using real Supabase Auth
  */
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Validate session on mount
+  // Validate session on mount and listen to changes
   useEffect(() => {
-    const sessionToken = sessionStorage.getItem("admin_session_token");
-    const sessionEmail = sessionStorage.getItem("admin_email");
-    
-    if (sessionToken && sessionEmail) {
-      // Verify session is not expired (demo: 1 hour)
-      const sessionTime = parseInt(sessionStorage.getItem("admin_session_time") || "0");
-      const now = Date.now();
-      const ONE_HOUR = 60 * 60 * 1000;
-      
-      if (now - sessionTime < ONE_HOUR) {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && session.user.email === ADMIN_EMAIL) {
         setIsAuthenticated(true);
-        setAdminEmail(sessionEmail);
+        setAdminEmail(session.user.email);
       } else {
-        // Session expired
-        sessionStorage.removeItem("admin_session_token");
-        sessionStorage.removeItem("admin_email");
-        sessionStorage.removeItem("admin_session_time");
+        setIsAuthenticated(false);
+        setAdminEmail(null);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user && session.user.email === ADMIN_EMAIL) {
+        setIsAuthenticated(true);
+        setAdminEmail(session.user.email);
+      } else {
+        setIsAuthenticated(false);
+        setAdminEmail(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = useCallback((email, password) => {
-    // Read credentials from environment variables
-    const validEmail = import.meta.env.VITE_ADMIN_EMAIL || "admin@sportxtreme.com";
-    const validPassword = import.meta.env.VITE_ADMIN_PASSWORD || "admin123";
-
-    if (email === validEmail && password === validPassword) {
-      // Create session token
-      const sessionToken = btoa(`${email}:${Date.now()}`);
-      sessionStorage.setItem("admin_session_token", sessionToken);
-      sessionStorage.setItem("admin_email", email);
-      sessionStorage.setItem("admin_session_time", Date.now().toString());
-      
-      setIsAuthenticated(true);
-      setAdminEmail(email);
-      return { success: true };
+  const login = useCallback(async (email, password) => {
+    if (email.trim() !== ADMIN_EMAIL) {
+      return { success: false, error: "Access denied. Admin account required." };
     }
-    return { success: false, error: "Invalid email or password" };
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      return { success: false, error: error.message || "Invalid email or password" };
+    }
+
+    if (data.user?.email !== ADMIN_EMAIL) {
+      await supabase.auth.signOut();
+      return { success: false, error: "Access denied. Admin account required." };
+    }
+
+    setIsAuthenticated(true);
+    setAdminEmail(data.user.email);
+    return { success: true };
   }, []);
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem("admin_session_token");
-    sessionStorage.removeItem("admin_email");
-    sessionStorage.removeItem("admin_session_time");
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
     setAdminEmail(null);
   }, []);
