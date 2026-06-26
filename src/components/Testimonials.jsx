@@ -3,7 +3,7 @@ import { TESTIMONIALS as STATIC_TESTIMONIALS, C } from "../data/content";
 import { supabase } from "../lib/supabase";
 
 export default function Testimonials() {
-  const [testimonials, setTestimonials] = useState(STATIC_TESTIMONIALS);
+  const [testimonials, setTestimonials] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -15,21 +15,25 @@ export default function Testimonials() {
           .select("*")
           .order("created_at", { ascending: false });
         if (cancelled) return;
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setTestimonials(data);
           setCurrentIndex(0);
         }
-      } catch { /* silently fall back to static */ }
+      } catch {
+        setTestimonials([]);
+      }
     }
     fetchTestimonials();
     return () => { cancelled = true; };
   }, []);
 
   const next = () => {
+    if (testimonials.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   };
 
   const prev = () => {
+    if (testimonials.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
@@ -37,7 +41,23 @@ export default function Testimonials() {
     setCurrentIndex(index);
   };
 
-  const current = testimonials[currentIndex] || STATIC_TESTIMONIALS[0];
+  if (testimonials.length === 0) {
+    return (
+      <section style={{ padding: "100px 5%", textAlign: "center" }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div className="eyebrow" style={{ justifyContent: "center" }}>Client Voices</div>
+          <h2 className="bebas" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 0.92 }}>
+            WHAT THEY SAY<br /><span style={{ color: C.red }}>ABOUT US</span>
+          </h2>
+        </div>
+        <div style={{ color: C.gray, fontSize: "1rem", padding: "40px 0" }}>
+          No testimonials available.
+        </div>
+      </section>
+    );
+  }
+
+  const current = testimonials[currentIndex];
 
   return (
     <section style={{ padding: "100px 5%" }}>

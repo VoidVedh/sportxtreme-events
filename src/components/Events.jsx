@@ -9,6 +9,7 @@ const CAT_EMOJI = {
 };
 
 function EventCard({ ev, idx }) {
+  const navigate = useNavigate();
   const title        = ev.title || "Untitled Event";
   const category     = (ev.category || "EVENT").toUpperCase();
   const sport        = ev.sport || "—";
@@ -23,7 +24,7 @@ function EventCard({ ev, idx }) {
   return (
     <div
       className="card-lift"
-      style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden" }}
+      style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden", display: "flex", flexDirection: "column" }}
     >
       <div
         style={{
@@ -55,17 +56,26 @@ function EventCard({ ev, idx }) {
         )}
       </div>
 
-      <div style={{ padding: "20px 24px 24px" }}>
-        <div className="bebas" style={{ fontSize: "1rem", letterSpacing: "0.03em", marginBottom: 10 }}>{title}</div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {participants && (
-            <span style={{ fontSize: "0.73rem", color: C.gray }}>
-              <span style={{ color: C.red }}>●</span> {participants} Participants
-            </span>
-          )}
-          <span style={{ fontSize: "0.73rem", color: C.gray }}>● {sport}</span>
-          {location && <span style={{ fontSize: "0.73rem", color: C.gray }}>📍 {location}</span>}
+      <div style={{ padding: "20px 24px 24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div>
+          <div className="bebas" style={{ fontSize: "1rem", letterSpacing: "0.03em", marginBottom: 10 }}>{title}</div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {participants && (
+              <span style={{ fontSize: "0.73rem", color: C.gray }}>
+                <span style={{ color: C.red }}>●</span> {participants} Participants
+              </span>
+            )}
+            <span style={{ fontSize: "0.73rem", color: C.gray }}>● {sport}</span>
+            {location && <span style={{ fontSize: "0.73rem", color: C.gray }}>📍 {location}</span>}
+          </div>
         </div>
+        <button
+          className="red-btn"
+          style={{ width: "100%", marginTop: 18, padding: "10px 0", fontSize: "0.8rem", letterSpacing: "0.05em" }}
+          onClick={() => navigate(`/register/${ev.id}`)}
+        >
+          REGISTER NOW
+        </button>
       </div>
     </div>
   );

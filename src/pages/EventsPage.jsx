@@ -12,6 +12,7 @@ const CAT_EMOJI = {
 };
 
 function EventCard({ ev, idx }) {
+  const navigate = useNavigate();
   const title        = ev.title    || ev.name || "Untitled Event";
   const category     = (ev.category || ev.cat || "EVENT").toUpperCase();
   const sport        = ev.sport    || "—";
@@ -81,28 +82,38 @@ function EventCard({ ev, idx }) {
       </div>
 
       {/* Body */}
-      <div style={{ padding: "22px 26px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-        <h3 className="bebas" style={{ fontSize: "1.15rem", letterSpacing: "0.04em", color: "#fff", lineHeight: 1.2 }}>
-          {title}
-        </h3>
+      <div style={{ padding: "22px 26px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 14 }}>
+        <div>
+          <h3 className="bebas" style={{ fontSize: "1.15rem", letterSpacing: "0.04em", color: "#fff", lineHeight: 1.2, marginBottom: 10 }}>
+            {title}
+          </h3>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: 4 }}>
-          {sport && (
-            <span style={{ fontSize: "0.75rem", color: C.gray }}>
-              <span style={{ color: C.red }}>⚡</span> {sport}
-            </span>
-          )}
-          {participants && (
-            <span style={{ fontSize: "0.75rem", color: C.gray }}>
-              <span style={{ color: C.red }}>●</span> {participants} Participants
-            </span>
-          )}
-          {location && (
-            <span style={{ fontSize: "0.75rem", color: C.gray }}>
-              📍 {location}
-            </span>
-          )}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: 4 }}>
+            {sport && (
+              <span style={{ fontSize: "0.75rem", color: C.gray }}>
+                <span style={{ color: C.red }}>⚡</span> {sport}
+              </span>
+            )}
+            {participants && (
+              <span style={{ fontSize: "0.75rem", color: C.gray }}>
+                <span style={{ color: C.red }}>●</span> {participants} Participants
+              </span>
+            )}
+            {location && (
+              <span style={{ fontSize: "0.75rem", color: C.gray }}>
+                📍 {location}
+              </span>
+            )}
+          </div>
         </div>
+
+        <button
+          className="red-btn"
+          style={{ width: "100%", marginTop: 8, padding: "10px 0", fontSize: "0.82rem", letterSpacing: "0.05em" }}
+          onClick={() => navigate(`/register/${ev.id}`)}
+        >
+          REGISTER NOW
+        </button>
       </div>
     </article>
   );

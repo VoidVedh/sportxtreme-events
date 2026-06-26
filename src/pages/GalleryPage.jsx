@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { C } from "../data/content";
-import { MOCK_GALLERY, getCategoryGradient } from "../data/mockGallery";
+import { getCategoryGradient } from "../data/mockGallery";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -153,7 +153,7 @@ export default function GalleryPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
-  const [gallery, setGallery] = useState(MOCK_GALLERY);
+  const [gallery, setGallery] = useState([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
 
   useEffect(() => {
@@ -172,9 +172,10 @@ export default function GalleryPage() {
           ...item,
           event: item.event_name || item.event || "",
         }));
-        setGallery(mapped.length > 0 ? mapped : MOCK_GALLERY);
-      } catch {
-        if (!cancelled) setGallery(MOCK_GALLERY);
+        setGallery(mapped);
+      } catch (err) {
+        console.error("Gallery fetch error:", err);
+        if (!cancelled) setGallery([]);
       } finally {
         if (!cancelled) setGalleryLoading(false);
       }

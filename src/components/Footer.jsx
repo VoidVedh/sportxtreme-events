@@ -93,7 +93,7 @@ export default function Footer() {
         <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.73rem" }}>
           © 2025 SportXtreme Events. All rights reserved.
         </div>
-        <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           {LEGAL_LINKS.map((l) => (
             <button
               key={l}
@@ -105,6 +105,15 @@ export default function Footer() {
               {l}
             </button>
           ))}
+          <button
+            id="footer-admin"
+            type="button"
+            className="flink"
+            style={{ background: "none", border: "none", padding: 0, marginBottom: 0, color: "#E50914", fontWeight: "bold" }}
+            onClick={() => navigate("/admin/login")}
+          >
+            Admin Panel
+          </button>
         </div>
       </div>
     </footer>

@@ -5,6 +5,7 @@ import SponsorModal from "./components/SponsorModal";
 import Home from "./pages/Home";
 import EventsPage from "./pages/EventsPage";
 import GalleryPage from "./pages/GalleryPage";
+import RegisterPage from "./pages/RegisterPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -16,6 +17,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/:eventId" element={<RegisterPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
             path="/admin/dashboard"

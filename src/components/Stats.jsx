@@ -1,22 +1,65 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useCounter } from "../hooks/useCounter";
 import { useInView }  from "../hooks/useInView";
 import { C } from "../data/content";
+import { supabase } from "../lib/supabase";
 
 export default function Stats() {
   const statsRef  = useRef(null);
   const statsInView = useInView(statsRef);
 
-  const eventsC  = useCounter(150,   statsInView);
-  const partC    = useCounter(50000, statsInView);
-  const sportsC  = useCounter(15,    statsInView);
-  const clientsC = useCounter(25,    statsInView);
+  const [rawStats, setRawStats] = useState({
+    events: 0,
+    participants: 0,
+    sports: 0,
+    gallery: 0,
+  });
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Fetch events count and distinct sports
+        const { data: eventsData } = await supabase.from("events").select("sport");
+        const eventsCount = eventsData ? eventsData.length : 0;
+        const distinctSports = eventsData
+          ? new Set(eventsData.map((e) => e.sport).filter(Boolean)).size
+          : 0;
+
+        // Fetch registrations count
+        // Note: we swallow error if registrations table does not exist yet (displays 0)
+        const { count: registrationsCount } = await supabase
+          .from("registrations")
+          .select("id", { count: "exact", head: true })
+          .catch(() => ({ count: 0 }));
+
+        // Fetch gallery count
+        const { count: galleryCount } = await supabase
+          .from("gallery")
+          .select("id", { count: "exact", head: true });
+
+        setRawStats({
+          events: eventsCount,
+          participants: registrationsCount || 0,
+          sports: distinctSports,
+          gallery: galleryCount || 0,
+        });
+      } catch (err) {
+        console.error("Error fetching live stats:", err);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const eventsC  = useCounter(rawStats.events,       statsInView);
+  const partC    = useCounter(rawStats.participants, statsInView);
+  const sportsC  = useCounter(rawStats.sports,       statsInView);
+  const galleryC = useCounter(rawStats.gallery,      statsInView);
 
   const STAT_ITEMS = [
-    { val: eventsC,                      suf: "+", label: "Events Managed",    icon: "🏆" },
-    { val: partC.toLocaleString("en-IN"), suf: "+", label: "Participants",       icon: "🤝" },
-    { val: sportsC,                      suf: "+", label: "Sports Categories",  icon: "⚡" },
-    { val: clientsC,                     suf: "+", label: "Corporate Clients",  icon: "🏢" },
+    { val: eventsC,                      suf: rawStats.events > 0 ? "+" : "",       label: "Events Managed",    icon: "🏆" },
+    { val: partC.toLocaleString("en-IN"), suf: rawStats.participants > 0 ? "+" : "", label: "Participants",       icon: "🤝" },
+    { val: sportsC,                      suf: rawStats.sports > 0 ? "+" : "",       label: "Sports Categories",  icon: "⚡" },
+    { val: galleryC,                     suf: rawStats.gallery > 0 ? "+" : "",      label: "Gallery Images",    icon: "📸" },
   ];
 
   return (

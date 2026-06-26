@@ -61,16 +61,17 @@ export default function Navbar() {
   const handleNav = useCallback(
     (section) => {
       setMobileOpen(false);
+      const secObj = typeof section === "string" ? { id: section } : section;
       
-      if (section.route) {
+      if (secObj.route) {
         // Navigate to route
-        navigate(section.route);
+        navigate(secObj.route);
       } else if (isHome) {
         // Scroll to section on home
-        scrollToSection(section.id);
+        scrollToSection(secObj.id);
       } else {
         // Navigate home then scroll after mount
-        navigate("/", { state: { scrollTo: section.id } });
+        navigate("/", { state: { scrollTo: secObj.id } });
       }
     },
     [isHome, navigate]
@@ -155,6 +156,14 @@ export default function Navbar() {
             </span>
           ))}
           <button
+            id="navbar-admin"
+            className="out-btn"
+            style={{ padding: "10px 22px", fontSize: "0.82rem", marginRight: 8 }}
+            onClick={() => { setMobileOpen(false); navigate("/admin/login"); }}
+          >
+            ADMIN
+          </button>
+          <button
             id="navbar-get-in-touch"
             className="red-btn"
             style={{ padding: "10px 22px", fontSize: "0.82rem" }}
@@ -230,6 +239,9 @@ export default function Navbar() {
             ))}
             <button className="red-btn" style={{ marginTop: 8 }} onClick={handleGetInTouch}>
               GET IN TOUCH →
+            </button>
+            <button className="out-btn" style={{ marginTop: 8 }} onClick={() => { setMobileOpen(false); navigate("/admin/login"); }}>
+              ADMIN LOGIN
             </button>
           </div>
         </div>
