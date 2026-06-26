@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 import { MOCK_EVENTS } from "../data/mockEvents";
 
 /**
- * Fetches events from mock data.
- * Falls back gracefully with loading / error / empty states.
+ * Fetches events from Supabase with graceful fallback to mock data.
  */
 export function useEvents({ limit = null } = {}) {
   const [events, setEvents]   = useState([]);
@@ -18,17 +18,28 @@ export function useEvents({ limit = null } = {}) {
       setError(null);
 
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        let query = supabase
+          .from("events")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (limit) query = query.limit(limit);
+
+        const { data, error: dbError } = await query;
 
         if (cancelled) return;
+        if (dbError) throw dbError;
 
-        let data = [...MOCK_EVENTS];
-        if (limit) data = data.slice(0, limit);
+        const result = data && data.length > 0
+          ? data
+          : limit ? MOCK_EVENTS.slice(0, limit) : MOCK_EVENTS;
 
-        setEvents(data);
+        setEvents(result);
       } catch (err) {
-        if (!cancelled) setError(err.message || "Failed to load events.");
+        if (!cancelled) {
+          setError(err.message || "Failed to load events.");
+          setEvents(limit ? MOCK_EVENTS.slice(0, limit) : MOCK_EVENTS);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

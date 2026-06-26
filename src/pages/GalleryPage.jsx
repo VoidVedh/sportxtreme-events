@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { C } from "../data/content";
 import { MOCK_GALLERY, getCategoryGradient } from "../data/mockGallery";
+import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -152,10 +153,39 @@ export default function GalleryPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("All");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [gallery, setGallery] = useState(MOCK_GALLERY);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchGallery() {
+      setGalleryLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("gallery")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (cancelled) return;
+        if (error) throw error;
+        // Map event_name -> event for component compatibility
+        const mapped = (data || []).map(item => ({
+          ...item,
+          event: item.event_name || item.event || "",
+        }));
+        setGallery(mapped.length > 0 ? mapped : MOCK_GALLERY);
+      } catch {
+        if (!cancelled) setGallery(MOCK_GALLERY);
+      } finally {
+        if (!cancelled) setGalleryLoading(false);
+      }
+    }
+    fetchGallery();
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = filter === "All"
-    ? MOCK_GALLERY
-    : MOCK_GALLERY.filter((item) => item.category === filter);
+    ? gallery
+    : gallery.filter((item) => item.category === filter);
 
   return (
     <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>

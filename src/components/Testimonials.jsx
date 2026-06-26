@@ -1,22 +1,43 @@
-import { useState } from "react";
-import { TESTIMONIALS, C } from "../data/content";
+import { useState, useEffect } from "react";
+import { TESTIMONIALS as STATIC_TESTIMONIALS, C } from "../data/content";
+import { supabase } from "../lib/supabase";
 
 export default function Testimonials() {
+  const [testimonials, setTestimonials] = useState(STATIC_TESTIMONIALS);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchTestimonials() {
+      try {
+        const { data, error } = await supabase
+          .from("testimonials")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (cancelled) return;
+        if (!error && data && data.length > 0) {
+          setTestimonials(data);
+          setCurrentIndex(0);
+        }
+      } catch { /* silently fall back to static */ }
+    }
+    fetchTestimonials();
+    return () => { cancelled = true; };
+  }, []);
+
   const next = () => {
-    setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   };
 
   const prev = () => {
-    setCurrentIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
   const goTo = (index) => {
     setCurrentIndex(index);
   };
 
-  const current = TESTIMONIALS[currentIndex];
+  const current = testimonials[currentIndex] || STATIC_TESTIMONIALS[0];
 
   return (
     <section style={{ padding: "100px 5%" }}>
@@ -141,7 +162,7 @@ export default function Testimonials() {
 
         {/* Dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 32 }}>
-          {TESTIMONIALS.map((_, index) => (
+          {testimonials.map((_, index) => (
             <button
               key={index}
               onClick={() => goTo(index)}

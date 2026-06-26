@@ -1,5 +1,5 @@
 /**
- * Apply migrations/001_fix_public_insert_rls.sql via Supabase Management API
+ * Apply migrations/FIX_apply_rls_storage_seed.sql via Supabase Management API
  * or direct Postgres connection.
  *
  * Requires one of:
@@ -13,7 +13,7 @@ import { fileURLToPath } from "url";
 import { getProjectRef, requireEnv, ROOT } from "./scripts/env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MIGRATION = resolve(ROOT, "migrations/001_fix_public_insert_rls.sql");
+const MIGRATION = resolve(ROOT, "migrations/FIX_apply_rls_storage_seed.sql");
 const sql = readFileSync(MIGRATION, "utf8");
 
 async function applyViaManagementApi() {

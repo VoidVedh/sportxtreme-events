@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { CONTACT_INFO, C } from "../data/content";
 import { useModal } from "../context/ModalContext";
+import { supabase } from "../lib/supabase";
 
 export default function Contact() {
   const [activeTab, setActiveTab] = useState("contact"); // "contact" or "proposal"
@@ -54,21 +55,17 @@ export default function Contact() {
       return;
     }
 
-    // Simulate API call with local state
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Store in local storage for demo purposes
-    const submission = {
+    const { error } = await supabase.from("contacts").insert([{
       name: contactData.name.trim(),
       phone: contactData.phone.trim() || null,
       email: contactData.email.trim(),
       message: contactData.message.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    
-    const existingSubmissions = JSON.parse(localStorage.getItem('contact_submissions') || '[]');
-    existingSubmissions.push(submission);
-    localStorage.setItem('contact_submissions', JSON.stringify(existingSubmissions));
+    }]);
+
+    if (error) {
+      setContactStatus({ loading: false, success: false, error: "Failed to send message. Please try again." });
+      return;
+    }
 
     setContactStatus({ loading: false, success: true, error: "" });
     setContactData({ name: "", phone: "", email: "", message: "" });
@@ -93,22 +90,18 @@ export default function Contact() {
       return;
     }
 
-    // Simulate API call with local state
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Store in local storage for demo purposes
-    const submission = {
+    const { error } = await supabase.from("proposals").insert([{
       company_name: proposalData.companyName.trim(),
       event_type: proposalData.eventType,
       participants: proposalData.participants.trim() || null,
       budget: proposalData.budget.trim() || null,
       description: proposalData.description.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    
-    const existingSubmissions = JSON.parse(localStorage.getItem('proposal_submissions') || '[]');
-    existingSubmissions.push(submission);
-    localStorage.setItem('proposal_submissions', JSON.stringify(existingSubmissions));
+    }]);
+
+    if (error) {
+      setProposalStatus({ loading: false, success: false, error: "Failed to submit proposal. Please try again." });
+      return;
+    }
 
     setProposalStatus({ loading: false, success: true, error: "" });
     setProposalData({ companyName: "", eventType: "", participants: "", budget: "", description: "" });

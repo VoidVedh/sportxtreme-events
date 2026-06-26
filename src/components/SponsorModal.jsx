@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useModal } from "../context/ModalContext";
 import { C } from "../data/content";
+import { supabase } from "../lib/supabase";
 
 export default function SponsorModal() {
   const { activeModal, closeModal } = useModal();
@@ -46,22 +47,18 @@ export default function SponsorModal() {
       return;
     }
 
-    // Simulate API call with local state
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Store in local storage for demo purposes
-    const submission = {
+    const { error: dbError } = await supabase.from("proposals").insert([{
       company_name: data.company_name,
       event_type: `SPONSOR: ${data.sponsorship_type}`,
       participants: data.contact_person,
       budget: data.budget,
       description: `[Sponsor Inquiry] Contact: ${data.contact_person} | Email: ${data.email} | Phone: ${data.phone} | Message: ${data.message}`,
-      timestamp: new Date().toISOString(),
-    };
-    
-    const existingSubmissions = JSON.parse(localStorage.getItem('sponsor_submissions') || '[]');
-    existingSubmissions.push(submission);
-    localStorage.setItem('sponsor_submissions', JSON.stringify(existingSubmissions));
+    }]);
+
+    if (dbError) {
+      setStatus({ loading: false, success: false, error: "Failed to submit. Please try again." });
+      return;
+    }
 
     setStatus({ loading: false, success: true, error: "" });
     setData({ company_name: "", contact_person: "", email: "", phone: "", sponsorship_type: "", budget: "", message: "" });
