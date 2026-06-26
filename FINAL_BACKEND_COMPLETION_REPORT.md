@@ -17,8 +17,9 @@ The following source code and configuration files were modified/created to compl
 | [`src/components/SponsorModal.jsx`](file:///Users/ved/Documents/sport/src/components/SponsorModal.jsx) | Submits sponsorship applications directly to `proposals` table (categorized under type `SPONSOR`). |
 | [`src/pages/GalleryPage.jsx`](file:///Users/ved/Documents/sport/src/pages/GalleryPage.jsx) | Fetches image gallery records from the `gallery` table with responsive fallback categories. |
 | [`src/components/Testimonials.jsx`](file:///Users/ved/Documents/sport/src/components/Testimonials.jsx) | Loads real-time client reviews from the `testimonials` table. |
-| [`src/pages/AdminLogin.jsx`](file:///Users/ved/Documents/sport/src/pages/AdminLogin.jsx) | Implements real Supabase Authentication using `signInWithPassword` combined with a strict email guard. |
-| [`src/pages/AdminDashboard.jsx`](file:///Users/ved/Documents/sport/src/pages/AdminDashboard.jsx) | Provides secure admin session guards and full CRUD controls for events, gallery (with uploads), testimonials, contacts, and proposals. |
+| [`src/context/AuthContext.jsx`](file:///Users/ved/Documents/sport/src/context/AuthContext.jsx) | Implements real Supabase Authentication session state, login (`signInWithPassword`), and logout (`signOut`) with strict email verification. |
+| [`src/pages/AdminLogin.jsx`](file:///Users/ved/Documents/sport/src/pages/AdminLogin.jsx) | Calls `login` from `AuthContext` to authenticate the user and routes securely to dashboard. |
+| [`src/pages/AdminDashboard.jsx`](file:///Users/ved/Documents/sport/src/pages/AdminDashboard.jsx) | Provides secure admin session guards and full CRUD controls for events, gallery (with storage uploads), testimonials, contacts, and proposals. |
 
 ---
 
@@ -77,11 +78,12 @@ Running the validation script [`node scripts/verify_backend.mjs`](file:///Users/
 
 ---
 
-## 6. Build Status
+## 6. Build & Deployment Status
 
 - **Command:** `npm run build`
-- **Result:** ✅ PASSING
-- **Stats:** 109 modules transformed, built in 695ms. No compile errors or warnings.
+- **Result:** ✅ PASSING (111 modules transformed, built in 692ms).
+- **GitHub Repository:** Push complete, branch up-to-date with `origin/main`.
+- **Vercel Deployment:** Automated build triggered successfully on push.
 
 ---
 
@@ -89,9 +91,5 @@ Running the validation script [`node scripts/verify_backend.mjs`](file:///Users/
 
 1. **Create Admin Login:**
    Go to your **Supabase Dashboard -> Authentication -> Users** and add `sportxtremeevents@gmail.com` if it's not already listed.
-2. **Push to GitHub to deploy on Vercel:**
-   ```bash
-   git add -A
-   git commit -m "feat: complete Supabase backend integration"
-   git push origin main
-   ```
+2. **Access Website:**
+   Verify the live forms and dashboard at the Vercel deployed URL: `https://sportxtreme-events.vercel.app` (or local port).
