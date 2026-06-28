@@ -206,8 +206,7 @@ export default function EventsPage() {
           ALL EVENTS<br /><span style={{ color: C.red }}>WE&apos;VE DELIVERED</span>
         </h1>
         <p style={{ color: C.gray, marginTop: 20, maxWidth: 520, lineHeight: 1.75, position: "relative" }}>
-          From intimate school championships to city-scale marathons — every event we&apos;ve managed,
-          every story we&apos;ve helped write.
+          From corporate leagues to school championships and marathons — professional sports event coordination.
         </p>
       </div>
 
@@ -299,7 +298,7 @@ export default function EventsPage() {
                 ? `No events matching "${search}". Try a different search term.`
                 : filter !== "All"
                 ? `No ${filter} events yet. Try a different category.`
-                : "No events available yet. Check back soon!"}
+                : "No upcoming events yet."}
             </p>
             {filter !== "All" && (
               <button className="out-btn" onClick={() => setFilter("All")}>

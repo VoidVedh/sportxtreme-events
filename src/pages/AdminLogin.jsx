@@ -57,7 +57,7 @@ export default function AdminLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                placeholder="admin@sportxtreme.com"
+                placeholder="sportxtremeevents@gmail.com"
                 style={{ width: "100%", padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: "0.9rem" }}
               />
             </div>

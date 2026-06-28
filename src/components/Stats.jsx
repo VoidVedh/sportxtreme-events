@@ -27,10 +27,17 @@ export default function Stats() {
 
         // Fetch registrations count
         // Note: we swallow error if registrations table does not exist yet (displays 0)
-        const { count: registrationsCount } = await supabase
-          .from("registrations")
-          .select("id", { count: "exact", head: true })
-          .catch(() => ({ count: 0 }));
+        let registrationsCount = 0;
+        try {
+          const { count, error: regError } = await supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true });
+          if (!regError && count !== null) {
+            registrationsCount = count;
+          }
+        } catch (e) {
+          console.error("Error fetching registrations:", e);
+        }
 
         // Fetch gallery count
         const { count: galleryCount } = await supabase
@@ -56,10 +63,10 @@ export default function Stats() {
   const galleryC = useCounter(rawStats.gallery,      statsInView);
 
   const STAT_ITEMS = [
-    { val: eventsC,                      suf: rawStats.events > 0 ? "+" : "",       label: "Events Managed",    icon: "🏆" },
-    { val: partC.toLocaleString("en-IN"), suf: rawStats.participants > 0 ? "+" : "", label: "Participants",       icon: "🤝" },
-    { val: sportsC,                      suf: rawStats.sports > 0 ? "+" : "",       label: "Sports Categories",  icon: "⚡" },
-    { val: galleryC,                     suf: rawStats.gallery > 0 ? "+" : "",      label: "Gallery Images",    icon: "📸" },
+    { val: eventsC,                      suf: "", label: "Events",         icon: "🏆" },
+    { val: partC.toLocaleString("en-IN"), suf: "", label: "Participants",   icon: "🤝" },
+    { val: sportsC,                      suf: "", label: "Sports",         icon: "⚡" },
+    { val: galleryC,                     suf: "", label: "Gallery Images", icon: "📸" },
   ];
 
   return (

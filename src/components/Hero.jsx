@@ -1,17 +1,53 @@
+import { useState, useEffect } from "react";
 import { C } from "../data/content";
 import { useModal } from "../context/ModalContext";
 import { scrollToSection } from "../lib/scroll";
-
-const HERO_STATS = [
-  { n: "150+", l: "Events"   },
-  { n: "50K+", l: "Athletes" },
-  { n: "15+",  l: "Sports"   },
-];
+import { supabase } from "../lib/supabase";
 
 const SPEED_LINE_POSITIONS = [12, 27, 42, 57, 72];
 
 export default function Hero() {
   const { openModal } = useModal();
+  const [stats, setStats] = useState({ events: 0, participants: 0, sports: 0 });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const { data: eventsData } = await supabase.from("events").select("sport");
+        const eventsCount = eventsData ? eventsData.length : 0;
+        const distinctSports = eventsData
+          ? new Set(eventsData.map((e) => e.sport).filter(Boolean)).size
+          : 0;
+
+        let registrationsCount = 0;
+        try {
+          const { count, error: regError } = await supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true });
+          if (!regError && count !== null) {
+            registrationsCount = count;
+          }
+        } catch (e) {
+          console.error("Error fetching registrations:", e);
+        }
+
+        setStats({
+          events: eventsCount,
+          participants: registrationsCount || 0,
+          sports: distinctSports
+        });
+      } catch (err) {
+        console.error("Error loading hero stats:", err);
+      }
+    }
+    loadStats();
+  }, []);
+
+  const heroStats = [
+    { n: stats.events, l: "Events" },
+    { n: stats.participants, l: "Participants" },
+    { n: stats.sports, l: "Sports" }
+  ];
 
   return (
     <section
@@ -71,8 +107,7 @@ export default function Hero() {
         />
 
         <p className="afu d2" style={{ color: C.gray, fontSize: "clamp(0.88rem, 1.4vw, 1rem)", lineHeight: 1.78, maxWidth: 480, marginBottom: 40 }}>
-          Transforming sporting dreams into extraordinary experiences — from school sports days to
-          national-level corporate leagues and 50,000-participant marathons.
+          SportXtreme Events coordinates premium corporate sports leagues, marathons, school championships, and tournaments. We handle planning, logistics, marketing, and gate check-in so your event runs seamlessly.
         </p>
 
         <div className="afu d3" style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 56 }}>
@@ -84,7 +119,7 @@ export default function Hero() {
           className="afu d4"
           style={{ display: "flex", gap: 40, paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}
         >
-          {HERO_STATS.map((s) => (
+          {heroStats.map((s) => (
             <div key={s.l}>
               <div className="bebas" style={{ fontSize: "1.75rem", color: C.red, lineHeight: 1 }}>{s.n}</div>
               <div style={{ fontSize: "0.68rem", color: C.gray, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 4 }}>{s.l}</div>

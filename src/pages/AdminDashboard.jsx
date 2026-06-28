@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [uploadCategory, setUploadCategory] = useState("General");
   const [uploadEventName, setUploadEventName] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const fileInputRef = useRef(null);
 
   // Fetch all data helper
@@ -296,6 +297,9 @@ export default function AdminDashboard() {
       participants: formData.get("participants"),
       event_date: formData.get("event_date") || null,
       status: formData.get("status") || "upcoming",
+      image_url: formData.get("image_url") || null,
+      registration_deadline: formData.get("registration_deadline") || null,
+      max_participants: formData.get("max_participants") ? parseInt(formData.get("max_participants"), 10) : null,
     };
 
     if (editingEvent) {
@@ -435,28 +439,50 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteGalleryItem = async (item) => {
-    if (window.confirm("Are you sure you want to delete this image?")) {
-      setLoading(true);
-      try {
-        if (item.storage_path) {
-          const { error: storageError } = await supabase.storage
-            .from("gallery")
-            .remove([item.storage_path]);
-          if (storageError) console.error("Could not remove from storage:", storageError.message);
-        }
+    if (!window.confirm("Are you sure you want to delete this image?")) return;
 
-        const { error: dbError } = await supabase
+    setDeletingId(item.id);
+    console.log("[Gallery Delete] Starting delete for:", item.id, item.caption);
+
+    try {
+      // Step 1: Delete from Supabase Storage (if file path exists)
+      if (item.storage_path) {
+        console.log("[Gallery Delete] Removing storage file:", item.storage_path);
+        const { data: storageData, error: storageError } = await supabase.storage
           .from("gallery")
-          .delete()
-          .eq("id", item.id);
-
-        if (dbError) throw dbError;
-        fetchData();
-      } catch (err) {
-        alert("Delete failed: " + err.message);
-      } finally {
-        setLoading(false);
+          .remove([item.storage_path]);
+        if (storageError) {
+          console.error("[Gallery Delete] Storage delete error (non-fatal):", storageError.code, storageError.message);
+        } else {
+          console.log("[Gallery Delete] Storage delete succeeded:", storageData);
+        }
+      } else {
+        console.log("[Gallery Delete] No storage_path on item — skipping storage delete.");
       }
+
+      // Step 2: Delete from gallery table
+      console.log("[Gallery Delete] Deleting DB row id:", item.id);
+      const { data: dbData, error: dbError } = await supabase
+        .from("gallery")
+        .delete()
+        .eq("id", item.id)
+        .select("id");
+
+      if (dbError) {
+        console.error("[Gallery Delete] DB delete FAILED:", dbError.code, dbError.message, dbError.details, dbError.hint);
+        throw dbError;
+      }
+
+      console.log("[Gallery Delete] DB row deleted:", dbData);
+
+      // Step 3: Refresh gallery list
+      await fetchData();
+      console.log("[Gallery Delete] Gallery refreshed. Delete complete.");
+    } catch (err) {
+      console.error("[Gallery Delete] Unhandled error:", err);
+      alert("Delete failed: " + (err.message || JSON.stringify(err)));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -902,23 +928,59 @@ export default function AdminDashboard() {
                     {editingEvent ? "EDIT EVENT" : "ADD EVENT"}
                   </h3>
                   <form onSubmit={handleSaveEvent} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    <input name="title" defaultValue={editingEvent?.title} placeholder="Event Title *" required style={inputStyle} />
-                    <input name="category" defaultValue={editingEvent?.category} placeholder="Category (e.g. CORPORATE) *" required style={inputStyle} />
-                    <input name="sport" defaultValue={editingEvent?.sport} placeholder="Sport (e.g. Cricket) *" required style={inputStyle} />
-                    <input name="location" defaultValue={editingEvent?.location} placeholder="Location" style={inputStyle} />
-                    <input name="participants" defaultValue={editingEvent?.participants} placeholder="Participants (e.g. 500+)" style={inputStyle} />
-                    <input name="event_date" defaultValue={editingEvent?.event_date} type="date" style={inputStyle} />
-                    <select name="status" defaultValue={editingEvent?.status || "upcoming"} style={inputStyle}>
-                      <option value="upcoming">Upcoming</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                    <textarea name="description" defaultValue={editingEvent?.description} placeholder="Description" style={{ gridColumn: "1 / -1", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", minHeight: "100px" }} />
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Event Title *</label>
+                      <input name="title" defaultValue={editingEvent?.title} placeholder="Event Title" required style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Category (e.g. CORPORATE) *</label>
+                      <input name="category" defaultValue={editingEvent?.category} placeholder="Category" required style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Sport (e.g. Cricket) *</label>
+                      <input name="sport" defaultValue={editingEvent?.sport} placeholder="Sport" required style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Venue / Location</label>
+                      <input name="location" defaultValue={editingEvent?.location} placeholder="Venue" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Participants Label (e.g. 500+)</label>
+                      <input name="participants" defaultValue={editingEvent?.participants} placeholder="Participants Label" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Event Date</label>
+                      <input name="event_date" defaultValue={editingEvent?.event_date} type="date" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Registration Deadline</label>
+                      <input name="registration_deadline" defaultValue={editingEvent?.registration_deadline} type="date" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Maximum Participants Limit</label>
+                      <input name="max_participants" defaultValue={editingEvent?.max_participants} type="number" placeholder="No limit if empty" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Event Banner Image URL</label>
+                      <input name="image_url" defaultValue={editingEvent?.image_url} placeholder="https://example.com/banner.jpg" style={{ ...inputStyle, width: "100%" }} />
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Event Status</label>
+                      <select name="status" defaultValue={editingEvent?.status || "upcoming"} style={{ ...inputStyle, width: "100%" }}>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label style={{ display: "block", fontSize: "0.75rem", color: C.gray, marginBottom: 4 }}>Description</label>
+                      <textarea name="description" defaultValue={editingEvent?.description} placeholder="Description" style={{ width: "100%", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", minHeight: "100px" }} />
+                    </div>
                     <div style={{ gridColumn: "1 / -1", display: "flex", gap: 12 }}>
                       <button type="submit" className="red-btn" style={{ padding: "12px 24px" }}>
                         {editingEvent ? "UPDATE EVENT" : "ADD EVENT"}
                       </button>
                       <button type="button" onClick={() => { setShowEventForm(false); setEditingEvent(null); }} style={{ padding: "12px 24px", background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>
-                        CANCEL
+                         CANCEL
                       </button>
                     </div>
                   </form>
@@ -1130,9 +1192,15 @@ export default function AdminDashboard() {
                         <div style={{ fontSize: "0.7rem", color: C.gray, marginBottom: 8 }}>{item.event_name || ""}</div>
                         <button
                           onClick={() => handleDeleteGalleryItem(item)}
-                          style={{ width: "100%", background: "none", border: "1px solid rgba(229,9,20,0.3)", color: C.red, padding: "5px", cursor: "pointer", fontSize: "0.72rem" }}
+                          disabled={deletingId === item.id}
+                          style={{
+                            width: "100%", background: deletingId === item.id ? "rgba(229,9,20,0.15)" : "none",
+                            border: "1px solid rgba(229,9,20,0.3)", color: C.red, padding: "5px",
+                            cursor: deletingId === item.id ? "not-allowed" : "pointer", fontSize: "0.72rem",
+                            opacity: deletingId === item.id ? 0.6 : 1,
+                          }}
                         >
-                          DELETE
+                          {deletingId === item.id ? "DELETING…" : "DELETE"}
                         </button>
                       </div>
                     </div>

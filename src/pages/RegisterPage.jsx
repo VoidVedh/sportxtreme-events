@@ -29,7 +29,7 @@ export default function RegisterPage() {
       try {
         const { data, error } = await supabase
           .from("events")
-          .select("id, title, event_date")
+          .select("id, title, event_date, registration_deadline, max_participants")
           .order("event_date", { ascending: false });
         if (error) throw error;
         setEvents(data || []);
@@ -62,12 +62,40 @@ export default function RegisterPage() {
       setStatus({ loading: false, success: false, error: "Please enter your phone number." });
       return;
     }
+    // Validation
     if (!selectedEventId) {
       setStatus({ loading: false, success: false, error: "Please select an event." });
       return;
     }
 
     try {
+      // Fetch selected event details for validation
+      const selectedEvent = events.find(ev => ev.id === selectedEventId);
+      if (selectedEvent) {
+        // 1. Check registration deadline
+        if (selectedEvent.registration_deadline) {
+          const deadline = new Date(selectedEvent.registration_deadline);
+          const today = new Date();
+          deadline.setHours(23, 59, 59, 999);
+          if (today > deadline) {
+            setStatus({ loading: false, success: false, error: "Registration for this event has closed (deadline passed)." });
+            return;
+          }
+        }
+
+        // 2. Check maximum participant limit
+        if (selectedEvent.max_participants) {
+          const { count, error: countError } = await supabase
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", selectedEventId);
+          
+          if (!countError && count !== null && count >= selectedEvent.max_participants) {
+            setStatus({ loading: false, success: false, error: "Registration is full. Maximum participant limit reached." });
+            return;
+          }
+        }
+      }
       const payload = {
         event_id: selectedEventId,
         name: name.trim(),
@@ -91,8 +119,7 @@ export default function RegisterPage() {
 
       if (error) throw error;
 
-      // Find selected event details for ticket display
-      const selectedEvent = events.find(ev => ev.id === selectedEventId);
+
 
       setTicket({
         id: data.id,

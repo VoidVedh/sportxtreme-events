@@ -31,8 +31,7 @@ export default function Footer() {
             THE PLAN BEHIND THE PLAY
           </div>
           <p style={{ color: C.gray, fontSize: "0.8rem", lineHeight: 1.72, maxWidth: 280 }}>
-            India&apos;s most trusted sports event management company. Crafting extraordinary sporting
-            experiences that inspire and unite.
+            SportXtreme Events — Professional sports event management. Crafting premium corporate leagues, marathons, school championships, and tournaments.
           </p>
         </div>
 
@@ -72,12 +71,11 @@ export default function Footer() {
         <div>
           <div className="bebas" style={{ fontSize: "0.85rem", letterSpacing: "0.1em", marginBottom: 18 }}>CONTACT</div>
           <div style={{ color: C.gray, fontSize: "0.8rem", lineHeight: 2 }}>
-            <a href="tel:+918976571622" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 8976571622</a>
-            <a href="tel:+919136890309" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 9136890309</a>
+            <a href="tel:+918975671622" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 8975671622</a>
             <a href="mailto:sportxtremeevents@gmail.com" className="flink" style={{ display: "block", marginTop: 6, marginBottom: 0 }}>
               sportxtremeevents@gmail.com
             </a>
-            <div style={{ marginTop: 6 }}>Mumbai, India</div>
+            <div style={{ marginTop: 6 }}>Mumbai, Maharashtra</div>
           </div>
         </div>
       </div>

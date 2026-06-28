@@ -27,7 +27,7 @@ export default function EventJourney() {
         {/* Steps */}
         <div
           className="jgrid"
-          style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, position: "relative", zIndex: 1 }}
+          style={{ display: "grid", gridTemplateColumns: `repeat(${JOURNEY.length}, 1fr)`, gap: 8, position: "relative", zIndex: 1 }}
         >
           {JOURNEY.map((step, i) => (
             <div

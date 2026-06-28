@@ -10,7 +10,16 @@ export default function Technology() {
         </h2>
       </div>
 
-      <div className="g3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div
+        className="g2"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 16,
+          maxWidth: 800,
+          margin: "0 auto"
+        }}
+      >
         {TECH_FEATURES.map((tech) => (
           <div
             key={tech.title}

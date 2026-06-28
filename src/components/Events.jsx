@@ -147,7 +147,7 @@ export default function Events() {
       {!loading && !error && events.length === 0 && (
         <div style={{ textAlign: "center", padding: "80px 20px", color: C.gray }}>
           <div style={{ fontSize: "3rem", marginBottom: 16 }}>📅</div>
-          <p style={{ fontSize: "1rem", marginBottom: 24 }}>No events found. Check back soon!</p>
+          <p style={{ fontSize: "1rem", marginBottom: 24 }}>No upcoming events yet.</p>
           <button className="out-btn" onClick={() => navigate("/events")}>
             VIEW ALL EVENTS
           </button>

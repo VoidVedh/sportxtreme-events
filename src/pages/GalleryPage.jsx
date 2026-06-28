@@ -1,10 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { C } from "../data/content";
-import { getCategoryGradient } from "../data/mockGallery";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+
+const CATEGORY_COLORS = {
+  Corporate: "linear-gradient(135deg, #1a0a0a, #2d1a1a)",
+  Marathon: "linear-gradient(135deg, #0a1a0a, #1a2d1a)",
+  School: "linear-gradient(135deg, #0a0a1a, #1a1a2d)",
+  League: "linear-gradient(135deg, #1a1a0a, #2d2d1a)",
+  Cycling: "linear-gradient(135deg, #0a1a1a, #1a2d2d)",
+  Aquatic: "linear-gradient(135deg, #0a0a1a, #1a1a3d)",
+};
+
+const getCategoryGradient = (category) => {
+  return CATEGORY_COLORS[category] || "linear-gradient(135deg, #0a0a0a, #1a1a1a)";
+};
 
 const CATEGORIES = ["All", "Corporate", "Marathon", "School", "League", "Cycling", "Aquatic"];
 
@@ -257,7 +269,7 @@ export default function GalleryPage() {
           OUR <span style={{ color: C.red }}>GALLERY</span>
         </h1>
         <p style={{ color: C.gray, marginTop: 20, maxWidth: 520, lineHeight: 1.75, position: "relative" }}>
-          Capturing the moments that make every event extraordinary — from the starting line to the victory stand.
+          Capturing moments from our sports event management tournaments.
         </p>
       </div>
 
@@ -299,12 +311,12 @@ export default function GalleryPage() {
           <div style={{ textAlign: "center", padding: "100px 20px" }}>
             <div style={{ fontSize: "4rem", marginBottom: 20 }}>📷</div>
             <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 12 }}>
-              NO PHOTOS FOUND
+              {filter !== "All" ? `NO ${filter.toUpperCase()} PHOTOS` : "No gallery images uploaded yet."}
             </h2>
             <p style={{ color: C.gray, marginBottom: 32 }}>
               {filter !== "All"
-                ? `No ${filter} photos yet. Try a different category.`
-                : "No photos available yet. Check back soon!"}
+                ? `No photos found under category "${filter}".`
+                : "Images uploaded by the administrator will appear here."}
             </p>
             {filter !== "All" && (
               <button className="out-btn" onClick={() => setFilter("All")}>

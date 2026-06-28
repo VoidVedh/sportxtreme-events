@@ -26,8 +26,7 @@ export default function SportsUniverse() {
           EVERY SPORT.<br /><span style={{ color: C.red }}>EVERY SCALE.</span>
         </h2>
         <p style={{ color: C.gray, marginTop: 20, maxWidth: 480, margin: "20px auto 0", lineHeight: 1.7 }}>
-          From intimate indoor tournaments to city-scale marathons — we have the expertise to manage
-          any sporting event at any level.
+          From corporate indoor tournaments to city-scale marathons — we manage sporting events at every level.
         </p>
       </div>
 

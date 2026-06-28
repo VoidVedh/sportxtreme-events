@@ -7,6 +7,7 @@ import Services     from "../components/Services";
 import EventJourney from "../components/EventJourney";
 import Technology   from "../components/Technology";
 import Events       from "../components/Events";
+import GalleryPreview from "../components/GalleryPreview";
 import Sponsors     from "../components/Sponsors";
 import Testimonials from "../components/Testimonials";
 import Contact      from "../components/Contact";
@@ -50,6 +51,7 @@ export default function Home() {
       <EventJourney />
       <Technology />
       <Events />
+      <GalleryPreview />
       <Sponsors />
       <Testimonials />
       <Contact />

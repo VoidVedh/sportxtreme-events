@@ -54,6 +54,7 @@ const EXPECTED_TABLES = {
   events:       ["id","title","category","sport","description","location","participants","event_date","status","created_at","updated_at"],
   gallery:      ["id","url","caption","category","event_name","storage_path","created_at","updated_at"],
   testimonials: ["id","name","role","text","stars","created_at","updated_at"],
+  registrations: ["id","registration_number","event_id","name","email","phone","age","tshirt_size","status","qr_payload","approved_at","approved_by","created_at","updated_at"],
 };
 
 const tableResults = {};
@@ -147,7 +148,29 @@ let proposalId = null;
   }
 }
 
-// 2g. anon should NOT be able to DELETE contacts (RLS guard test)
+// 2g. registrations RLS validation (INSERT should succeed, SELECT should be blocked)
+{
+  const { data: eventsData } = await supabase.from("events").select("id").limit(1);
+  if (eventsData && eventsData.length > 0) {
+    const { error } = await supabase.from("registrations").insert([{
+      event_id: eventsData[0].id,
+      name: "VERIFY TEST - Registrant",
+      email: "verify-reg@sportxtreme.test",
+      phone: "9999999999",
+      tshirt_size: "M",
+      status: "pending"
+    }]);
+    log("registrations: anon INSERT", !error, error ? `${error.code}: ${error.message}` : "inserted");
+  } else {
+    log("registrations: anon INSERT", false, "no events to link registration to");
+  }
+
+  const { data, error } = await supabase.from("registrations").select("id");
+  const blocked = !error && (!data || data.length === 0);
+  log("registrations: anon SELECT is BLOCKED (expected)", blocked || error, error ? `${error.code}: ${error.message}` : "blocked (0 rows returned)");
+}
+
+// 2h. anon should NOT be able to DELETE contacts (RLS guard test)
 {
   const { data, error } = await supabase.from("contacts").delete().eq("email", "verify@sportxtreme.test").select();
   const blocked = error || !data || data.length === 0;
@@ -220,8 +243,8 @@ console.log("══════════════════════�
 
 // Export results for report generation
 import { writeFileSync } from "fs";
-writeFileSync("/tmp/verify_results.json", JSON.stringify({ passCount, failCount, results }, null, 2));
-console.log("\nResults written to /tmp/verify_results.json");
+writeFileSync("./verify_results.json", JSON.stringify({ passCount, failCount, results }, null, 2));
+console.log("\nResults written to ./verify_results.json");
 
 if (failCount > 0) {
   console.log("\n⚠️  FAILURES DETECTED — see above for details");

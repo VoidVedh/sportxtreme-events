@@ -33,7 +33,7 @@ export default function Contact() {
 
   // WhatsApp click handler
   const handleWhatsApp = () => {
-    window.open("https://wa.me/918976571622", "_blank");
+    window.open("https://wa.me/918975671622", "_blank");
   };
 
   // Submit Contact Form
@@ -151,9 +151,7 @@ export default function Contact() {
                   </div>
                   {c.label === "Call Us" ? (
                     <div style={{ fontSize: "0.88rem", lineHeight: 1.6 }}>
-                      <a href="tel:+918976571622" className="flink" style={{ display: "inline-block", margin: 0 }}>+91 8976571622</a>
-                      <br />
-                      <a href="tel:+919136890309" className="flink" style={{ display: "inline-block", margin: 0 }}>+91 9136890309</a>
+                      <a href="tel:+918975671622" className="flink" style={{ display: "inline-block", margin: 0 }}>+91 8975671622</a>
                     </div>
                   ) : c.label === "Email" ? (
                     <div style={{ fontSize: "0.88rem", lineHeight: 1.6 }}>
