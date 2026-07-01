@@ -5,6 +5,24 @@ import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+function formatCaption(caption) {
+  if (!caption) return "Untitled Image";
+  const trimmed = caption.trim();
+  if (!trimmed) return "Untitled Image";
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".png") ||
+    lower.endsWith(".webp") ||
+    lower.endsWith(".gif") ||
+    lower.match(/^[a-z0-9-]+\.[a-z0-9]+$/)
+  ) {
+    return "Untitled Image";
+  }
+  return trimmed;
+}
+
 const CATEGORY_COLORS = {
   Corporate: "linear-gradient(135deg, #1a0a0a, #2d1a1a)",
   Marathon: "linear-gradient(135deg, #0a1a0a, #1a2d1a)",
@@ -17,8 +35,6 @@ const CATEGORY_COLORS = {
 const getCategoryGradient = (category) => {
   return CATEGORY_COLORS[category] || "linear-gradient(135deg, #0a0a0a, #1a1a1a)";
 };
-
-const CATEGORIES = ["All", "Corporate", "Marathon", "School", "League", "Cycling", "Aquatic"];
 
 function GalleryItem({ item, idx, onClick }) {
   const gradient = getCategoryGradient(item.category);
@@ -73,7 +89,7 @@ function GalleryItem({ item, idx, onClick }) {
       </div>
       <div style={{ padding: "16px 20px" }}>
         <div style={{ fontSize: "0.85rem", color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
-          {item.caption}
+          {formatCaption(item.caption)}
         </div>
         <div style={{ fontSize: "0.73rem", color: C.gray }}>
           {item.event}
@@ -128,7 +144,7 @@ function GalleryModal({ item, onClose }) {
         </div>
         <div style={{ padding: "32px" }}>
           <h2 className="bebas" style={{ fontSize: "1.8rem", marginBottom: 12 }}>
-            {item.caption}
+            {formatCaption(item.caption)}
           </h2>
           <div style={{ display: "flex", gap: 16, color: C.gray, fontSize: "0.85rem" }}>
             <span>Category: {item.category}</span>
@@ -199,6 +215,8 @@ export default function GalleryPage() {
   const filtered = filter === "All"
     ? gallery
     : gallery.filter((item) => item.category === filter);
+
+  const categories = ["All", ...new Set(gallery.map(item => item.category).filter(Boolean))];
 
   return (
     <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>
@@ -284,7 +302,7 @@ export default function GalleryPage() {
           background: "rgba(255,255,255,0.01)",
         }}
       >
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             className={`sport-tab${filter === cat ? " on" : ""}`}
@@ -311,7 +329,7 @@ export default function GalleryPage() {
           <div style={{ textAlign: "center", padding: "100px 20px" }}>
             <div style={{ fontSize: "4rem", marginBottom: 20 }}>📷</div>
             <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 12 }}>
-              {filter !== "All" ? `NO ${filter.toUpperCase()} PHOTOS` : "No gallery images uploaded yet."}
+              {filter !== "All" ? `NO ${filter.toUpperCase()} PHOTOS` : "No gallery images available."}
             </h2>
             <p style={{ color: C.gray, marginBottom: 32 }}>
               {filter !== "All"

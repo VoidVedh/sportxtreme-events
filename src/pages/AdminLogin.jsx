@@ -97,9 +97,7 @@ export default function AdminLogin() {
         </div>
 
         <div style={{ marginTop: 24, textAlign: "center", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-          <p>Use environment variables:</p>
-          <p>VITE_ADMIN_EMAIL</p>
-          <p>VITE_ADMIN_PASSWORD</p>
+          <p>Login with your Supabase admin credentials</p>
         </div>
       </div>
     </div>

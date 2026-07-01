@@ -7,6 +7,24 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 
 const GALLERY_CATEGORIES = ["Corporate", "Marathon", "School", "League", "Cycling", "Aquatic", "Badminton", "General"];
 
+function formatCaption(caption) {
+  if (!caption) return "Untitled Image";
+  const trimmed = caption.trim();
+  if (!trimmed) return "Untitled Image";
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".png") ||
+    lower.endsWith(".webp") ||
+    lower.endsWith(".gif") ||
+    lower.match(/^[a-z0-9-]+\.[a-z0-9]+$/)
+  ) {
+    return "Untitled Image";
+  }
+  return trimmed;
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { logout, adminEmail } = useAuth();
@@ -264,13 +282,44 @@ export default function AdminDashboard() {
   };
 
   // ── EVENTS CRUD ──
+  const deleteStorageFileIfSupabase = async (url) => {
+    if (!url) return;
+    try {
+      const storageMarker = "/storage/v1/object/public/gallery/";
+      const markerIndex = url.indexOf(storageMarker);
+      if (markerIndex !== -1) {
+        const storagePath = url.substring(markerIndex + storageMarker.length);
+        console.log("[Delete Storage File] Removing banner file:", storagePath);
+        const { error } = await supabase.storage.from("gallery").remove([storagePath]);
+        if (error) {
+          console.warn("[Delete Storage File] Storage removal warning:", error.message);
+        } else {
+          console.log("[Delete Storage File] Storage removal successful:", storagePath);
+        }
+      }
+    } catch (err) {
+      console.error("[Delete Storage File] Parser error:", err);
+    }
+  };
+
   const handleDeleteEvent = async (id) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
+      const targetEvent = events.find(e => e.id === id);
+      const imageUrl = targetEvent?.image_url;
+
+      const { error: regDeleteError } = await supabase.from("registrations").delete().eq("event_id", id);
+      if (regDeleteError) {
+        console.warn("Failed to delete registrations for event:", regDeleteError.message);
+      }
+
       const { error: deleteError } = await supabase.from("events").delete().eq("id", id);
       if (deleteError) {
         alert("Failed to delete event: " + deleteError.message);
       } else {
-        setEvents(events.filter(e => e.id !== id));
+        if (imageUrl) {
+          await deleteStorageFileIfSupabase(imageUrl);
+        }
+        await fetchData();
       }
     }
   };
@@ -298,9 +347,16 @@ export default function AdminDashboard() {
       event_date: formData.get("event_date") || null,
       status: formData.get("status") || "upcoming",
       image_url: formData.get("image_url") || null,
-      registration_deadline: formData.get("registration_deadline") || null,
-      max_participants: formData.get("max_participants") ? parseInt(formData.get("max_participants"), 10) : null,
     };
+
+    const regDeadline = formData.get("registration_deadline");
+    if (regDeadline) {
+      eventPayload.registration_deadline = regDeadline;
+    }
+    const maxPart = formData.get("max_participants");
+    if (maxPart) {
+      eventPayload.max_participants = parseInt(maxPart, 10);
+    }
 
     if (editingEvent) {
       const { error: updateError } = await supabase
@@ -386,9 +442,59 @@ export default function AdminDashboard() {
     }
   };
 
+  const compressImageToWebP = (file, quality = 0.8, maxWidth = 1920) => {
+    return new Promise((resolve, reject) => {
+      if (file.type === "image/gif") {
+        resolve(file);
+        return;
+      }
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Canvas conversion to Blob failed"));
+              return;
+            }
+            const originalName = file.name;
+            const lastDot = originalName.lastIndexOf(".");
+            const nameWithoutExt = lastDot !== -1 ? originalName.substring(0, lastDot) : originalName;
+            
+            const webpFile = new File([blob], `${nameWithoutExt}.webp`, {
+              type: "image/webp",
+              lastModified: Date.now(),
+            });
+            resolve(webpFile);
+          },
+          "image/webp",
+          quality
+        );
+      };
+      img.onerror = (err) => reject(err);
+    });
+  };
+
   // ── GALLERY CRUD (WITH STORAGE) ──
   const handleGalleryFileChange = async (e) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 5242880) {
@@ -397,32 +503,94 @@ export default function AdminDashboard() {
     }
 
     setUploadingImage(true);
+    console.group("[GalleryUpload] ── STARTING UPLOAD ──");
+    console.log("[GalleryUpload] Original file name    :", file.name);
+    console.log("[GalleryUpload] Original file size    :", file.size, "bytes");
+    console.log("[GalleryUpload] Original file type    :", file.type);
+
     try {
+      // Compress and convert to WebP (skip for gifs)
+      if (file.type !== "image/gif") {
+        try {
+          console.log("[GalleryUpload] Compressing image and converting to WebP...");
+          file = await compressImageToWebP(file, 0.8, 1920);
+          console.log("[GalleryUpload] Compressed file name  :", file.name);
+          console.log("[GalleryUpload] Compressed file size  :", file.size, "bytes");
+          console.log("[GalleryUpload] Compressed file type  :", file.type);
+        } catch (compressErr) {
+          console.warn("[GalleryUpload] Compression failed, uploading original:", compressErr.message);
+        }
+      }
+
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `gallery/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("[GalleryUpload] storage_path will be:", filePath);
+      console.log("[GalleryUpload] Calling: supabase.storage.from('gallery').upload('" + filePath + "', file)");
+
+      const { data: storageUpData, error: uploadError } = await supabase.storage
         .from("gallery")
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      console.log("[GalleryUpload] Storage upload raw response:", JSON.parse(JSON.stringify({ data: storageUpData, error: uploadError })));
+
+      if (uploadError) {
+        console.error("[GalleryUpload] ❌ STORAGE UPLOAD FAILED");
+        console.error("[GalleryUpload] error.message   :", uploadError.message);
+        console.error("[GalleryUpload] error.statusCode:", uploadError.statusCode);
+        console.error("[GalleryUpload] error (full)    :", uploadError);
+        throw uploadError;
+      }
+
+      console.log("[GalleryUpload] ✅ Storage upload succeeded:", storageUpData);
 
       const { data: { publicUrl } } = supabase.storage
         .from("gallery")
         .getPublicUrl(filePath);
 
-      const { error: dbError } = await supabase.from("gallery").insert([
-        {
-          url: publicUrl,
-          caption: uploadCaption.trim() || file.name,
-          category: uploadCategory,
-          event_name: uploadEventName.trim() || null,
-          storage_path: filePath,
-        },
-      ]);
+      console.log("[GalleryUpload] publicUrl:", publicUrl);
 
-      if (dbError) throw dbError;
+      const insertPayload = {
+        url: publicUrl,
+        caption: uploadCaption.trim() || "Untitled Image",
+        category: uploadCategory,
+        event_name: uploadEventName.trim() || null,
+        storage_path: filePath,
+      };
+      console.log("[GalleryUpload] DB insert payload:", JSON.parse(JSON.stringify(insertPayload)));
+
+      const insertResult = await supabase.from("gallery").insert([insertPayload]).select("*");
+
+      console.log("[GalleryUpload] DB insert raw response:", JSON.parse(JSON.stringify(insertResult)));
+      console.log("[GalleryUpload] DB data    :", insertResult.data);
+      console.log("[GalleryUpload] DB error   :", insertResult.error);
+      console.log("[GalleryUpload] DB status  :", insertResult.status);
+
+      if (insertResult.error) {
+        console.error("[GalleryUpload] ❌ DB INSERT FAILED");
+        console.error("[GalleryUpload] error.message:", insertResult.error.message);
+        console.error("[GalleryUpload] error.code   :", insertResult.error.code);
+        console.error("[GalleryUpload] error.details:", insertResult.error.details);
+        console.error("[GalleryUpload] error.hint   :", insertResult.error.hint);
+        console.error("[GalleryUpload] error (full) :", insertResult.error);
+        throw insertResult.error;
+      }
+
+      const savedRow = insertResult.data?.[0];
+      console.log("[GalleryUpload] ✅ DB row saved. Actual row in DB:", savedRow);
+      console.log("[GalleryUpload] Saved storage_path:", savedRow?.storage_path);
+      console.log("[GalleryUpload] Saved category    :", savedRow?.category);
+      console.log("[GalleryUpload] Saved event_name  :", savedRow?.event_name);
+      console.log("[GalleryUpload] Saved id          :", savedRow?.id);
+
+      if (savedRow?.storage_path !== filePath) {
+        console.error("[GalleryUpload] ⚠️ storage_path MISMATCH or NULL in saved row!");
+        console.error("[GalleryUpload] Expected:", filePath);
+        console.error("[GalleryUpload] Got     :", savedRow?.storage_path);
+      }
+
+      console.groupEnd();
 
       setUploadCaption("");
       setUploadEventName("");
@@ -431,62 +599,140 @@ export default function AdminDashboard() {
       fetchData();
       alert("Image uploaded successfully!");
     } catch (err) {
-      console.error("Upload failed:", err);
+      console.error("[GalleryUpload] ❌ UNHANDLED ERROR");
+      console.error("[GalleryUpload] err (full):", err);
+      console.groupEnd();
       alert("Upload failed: " + (err.message || err.error_description || "Unknown error"));
     } finally {
       setUploadingImage(false);
     }
   };
 
+
   const handleDeleteGalleryItem = async (item) => {
     if (!window.confirm("Are you sure you want to delete this image?")) return;
 
     setDeletingId(item.id);
-    console.log("[Gallery Delete] Starting delete for:", item.id, item.caption);
+
+    // ── STEP 1: Dump the full item object ──────────────────────────────────
+    console.group("[GalleryDelete] ── STARTING DELETE ──");
+    console.log("[GalleryDelete] item.id          :", item.id);
+    console.log("[GalleryDelete] item.caption     :", item.caption);
+    console.log("[GalleryDelete] item.storage_path:", item.storage_path);
+    console.log("[GalleryDelete] item.url         :", item.url);
+    console.log("[GalleryDelete] item.category    :", item.category);
+    console.log("[GalleryDelete] item.event_name  :", item.event_name);
+    console.log("[GalleryDelete] FULL item object :", JSON.parse(JSON.stringify(item)));
+    console.log("[GalleryDelete] bucket           : gallery");
+    console.log("[GalleryDelete] storage filename :", item.storage_path ? item.storage_path.split("/").pop() : "(none — no storage_path)");
+    console.groupEnd();
 
     try {
-      // Step 1: Delete from Supabase Storage (if file path exists)
-      if (item.storage_path) {
-        console.log("[Gallery Delete] Removing storage file:", item.storage_path);
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from("gallery")
-          .remove([item.storage_path]);
-        if (storageError) {
-          console.error("[Gallery Delete] Storage delete error (non-fatal):", storageError.code, storageError.message);
-        } else {
-          console.log("[Gallery Delete] Storage delete succeeded:", storageData);
-        }
-      } else {
-        console.log("[Gallery Delete] No storage_path on item — skipping storage delete.");
+      // ── STEP 0: Verify active session ─────────────────────────────────
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      console.log("[GalleryDelete] Session check — user:", session?.user?.email ?? "NOT AUTHENTICATED");
+      if (!session) {
+        throw new Error("Not authenticated. Your session may have expired. Please log out and log in again.");
       }
 
-      // Step 2: Delete from gallery table
-      console.log("[Gallery Delete] Deleting DB row id:", item.id);
-      const { data: dbData, error: dbError } = await supabase
+      // ── STEP 2A: Storage delete ────────────────────────────────────────
+      if (item.storage_path) {
+        const storagePath = item.storage_path;
+        console.group("[GalleryDelete] ── STORAGE DELETE ──");
+        console.log("[GalleryDelete] Path to remove:", storagePath);
+
+        const storageResult = await supabase.storage
+          .from("gallery")
+          .remove([storagePath]);
+
+        console.log("[GalleryDelete] Storage raw response:", JSON.parse(JSON.stringify(storageResult)));
+        console.log("[GalleryDelete] Storage data    :", storageResult.data);
+        console.log("[GalleryDelete] Storage error   :", storageResult.error);
+
+        if (storageResult.error) {
+          console.error("[GalleryDelete] ❌ STORAGE DELETE FAILED");
+          console.error("[GalleryDelete] error.message   :", storageResult.error.message);
+          console.error("[GalleryDelete] error.statusCode:", storageResult.error.statusCode);
+          console.error("[GalleryDelete] error (full)    :", storageResult.error);
+          // Non-fatal: log but continue to DB delete
+        } else if (!storageResult.data || storageResult.data.length === 0) {
+          console.warn("[GalleryDelete] ⚠️ STORAGE DELETE returned empty data[] — file may not exist or path mismatch");
+          console.warn("[GalleryDelete] Path attempted:", storagePath);
+          // Non-fatal: file may already be gone; continue to DB delete
+        } else {
+          console.log("[GalleryDelete] ✅ Storage delete succeeded:", storageResult.data);
+        }
+        console.groupEnd();
+      } else {
+        console.warn("[GalleryDelete] ⚠️ item.storage_path is", JSON.stringify(item.storage_path), "— skipping storage delete");
+        console.warn("[GalleryDelete] File is orphaned in Storage bucket — not tracked in DB row.");
+      }
+
+      // ── STEP 2B: Database delete ───────────────────────────────────────
+      console.group("[GalleryDelete] ── DATABASE DELETE ──");
+      console.log("[GalleryDelete] Deleting row with id:", item.id);
+
+      const dbResult = await supabase
         .from("gallery")
         .delete()
         .eq("id", item.id)
         .select("id");
 
-      if (dbError) {
-        console.error("[Gallery Delete] DB delete FAILED:", dbError.code, dbError.message, dbError.details, dbError.hint);
-        throw dbError;
+      console.log("[GalleryDelete] DB raw response:", JSON.parse(JSON.stringify(dbResult)));
+      console.log("[GalleryDelete] DB data       :", dbResult.data);
+      console.log("[GalleryDelete] DB error      :", dbResult.error);
+      console.log("[GalleryDelete] DB status     :", dbResult.status);
+      console.log("[GalleryDelete] DB statusText :", dbResult.statusText);
+
+      if (dbResult.error) {
+        console.error("[GalleryDelete] ❌ DB DELETE FAILED");
+        console.error("[GalleryDelete] error.message:", dbResult.error.message);
+        console.error("[GalleryDelete] error.code   :", dbResult.error.code);
+        console.error("[GalleryDelete] error.details:", dbResult.error.details);
+        console.error("[GalleryDelete] error.hint   :", dbResult.error.hint);
+        console.error("[GalleryDelete] error (full) :", dbResult.error);
+        console.groupEnd();
+        throw dbResult.error;
       }
 
-      console.log("[Gallery Delete] DB row deleted:", dbData);
+      if (!dbResult.data || dbResult.data.length === 0) {
+        // RLS silently blocked the delete — no error, but 0 rows affected
+        console.error("[GalleryDelete] ❌ DB DELETE returned 0 rows — RLS blocked it (session may have expired)");
+        console.error("[GalleryDelete] HTTP status  :", dbResult.status, dbResult.statusText);
+        console.error("[GalleryDelete] Full response:", JSON.parse(JSON.stringify(dbResult)));
+        console.groupEnd();
+        throw new Error("Delete was blocked — your admin session may have expired. Please refresh the page and log in again.");
+      }
 
-      // Step 3: Refresh gallery list
+      console.log("[GalleryDelete] ✅ DB row deleted. Confirmed ids:", dbResult.data);
+      console.groupEnd();
+
+      // ── STEP 2C: Gallery refresh ───────────────────────────────────────
+      console.group("[GalleryDelete] ── GALLERY REFRESH ──");
+      console.log("[GalleryDelete] Calling fetchData()...");
       await fetchData();
-      console.log("[Gallery Delete] Gallery refreshed. Delete complete.");
+      console.log("[GalleryDelete] ✅ fetchData() complete.");
+      console.groupEnd();
+
+      console.log("[GalleryDelete] ✅ FULL DELETE COMPLETE for id:", item.id);
+
     } catch (err) {
-      console.error("[Gallery Delete] Unhandled error:", err);
-      alert("Delete failed: " + (err.message || JSON.stringify(err)));
+      console.error("[GalleryDelete] ❌ UNHANDLED ERROR thrown");
+      console.error("[GalleryDelete] err.message    :", err?.message);
+      console.error("[GalleryDelete] err.code       :", err?.code);
+      console.error("[GalleryDelete] err.details    :", err?.details);
+      console.error("[GalleryDelete] err.hint       :", err?.hint);
+      console.error("[GalleryDelete] err.statusCode :", err?.statusCode);
+      console.error("[GalleryDelete] err (full)     :", err);
+      alert("Delete failed: " + (err?.message || JSON.stringify(err)));
     } finally {
       setDeletingId(null);
     }
   };
 
   // Filters for registrations list
+
   const filteredRegs = registrations.filter(r => {
     const searchMatch = !regSearch.trim() ||
       r.name.toLowerCase().includes(regSearch.toLowerCase()) ||
@@ -1001,7 +1247,7 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {events.length === 0 ? (
-                      <tr><td colSpan={6} style={{ padding: "32px", textAlign: "center", color: C.gray }}>No events exist. Add your first event above.</td></tr>
+                      <tr><td colSpan={6} style={{ padding: "32px", textAlign: "center", color: C.gray }}>No upcoming events.</td></tr>
                     ) : (
                       events.map((event) => (
                         <tr key={event.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -1188,7 +1434,7 @@ export default function AdminDashboard() {
                         )}
                       </div>
                       <div style={{ padding: "10px 12px" }}>
-                        <div style={{ fontSize: "0.78rem", color: "#fff", marginBottom: 2 }}>{item.caption || "—"}</div>
+                        <div style={{ fontSize: "0.78rem", color: "#fff", marginBottom: 2 }}>{formatCaption(item.caption)}</div>
                         <div style={{ fontSize: "0.7rem", color: C.gray, marginBottom: 8 }}>{item.event_name || ""}</div>
                         <button
                           onClick={() => handleDeleteGalleryItem(item)}

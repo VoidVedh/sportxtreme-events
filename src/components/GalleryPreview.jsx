@@ -3,6 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { C } from "../data/content";
 import { supabase } from "../lib/supabase";
 
+function formatCaption(caption) {
+  if (!caption) return "Untitled Image";
+  const trimmed = caption.trim();
+  if (!trimmed) return "Untitled Image";
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".png") ||
+    lower.endsWith(".webp") ||
+    lower.endsWith(".gif") ||
+    lower.match(/^[a-z0-9-]+\.[a-z0-9]+$/)
+  ) {
+    return "Untitled Image";
+  }
+  return trimmed;
+}
+
 export default function GalleryPreview() {
   const navigate = useNavigate();
   const [images, setImages] = useState([]);
@@ -83,7 +101,7 @@ export default function GalleryPreview() {
               />
               <div style={{ padding: "16px 20px" }}>
                 <div style={{ fontSize: "0.85rem", color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>
-                  {item.caption}
+                  {formatCaption(item.caption)}
                 </div>
                 <div style={{ fontSize: "0.73rem", color: C.gray, marginTop: 4 }}>
                   {item.event_name || item.event || ""}
@@ -98,7 +116,7 @@ export default function GalleryPreview() {
         <div style={{ textAlign: "center", padding: "60px 20px", border: "1px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.005)" }}>
           <div style={{ fontSize: "3rem", marginBottom: 16 }}>📸</div>
           <h3 className="bebas" style={{ fontSize: "1.5rem", marginBottom: 8, color: "#fff" }}>
-            No gallery images uploaded yet.
+            No gallery images available.
           </h3>
           <p style={{ color: C.gray, fontSize: "0.88rem" }}>
             Images uploaded by the administrator will appear here.

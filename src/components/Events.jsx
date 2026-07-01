@@ -2,80 +2,86 @@ import { useNavigate } from "react-router-dom";
 import { C } from "../data/content";
 import { useEvents } from "../hooks/useEvents";
 
-const CAT_EMOJI = {
-  CORPORATE: "🏏", MARATHON: "🏃", SCHOOL: "🎓",
-  LEAGUE: "⚽", CYCLING: "🚴", AQUATIC: "🏊",
-  DEFAULT: "🏆",
+const isRegistrationEnabled = (ev) => {
+  if (ev.status && ev.status !== "upcoming") return false;
+
+  if (ev.registration_deadline) {
+    const deadline = new Date(ev.registration_deadline);
+    const today = new Date();
+    deadline.setHours(23, 59, 59, 999);
+    if (today > deadline) return false;
+  }
+
+  return true;
 };
 
-function EventCard({ ev, idx }) {
+function EventCard({ ev }) {
   const navigate = useNavigate();
-  const title        = ev.title || "Untitled Event";
-  const category     = (ev.category || "EVENT").toUpperCase();
-  const sport        = ev.sport || "—";
-  const location     = ev.location || "";
-  const date         = ev.event_date
+  const title = ev.title || "Untitled Event";
+  const location = ev.location || "";
+  const date = ev.event_date
     ? new Date(ev.event_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
     : "";
-  const participants = ev.participants || "";
-  const image        = ev.image_url || null;
-  const emoji        = CAT_EMOJI[category] || CAT_EMOJI.DEFAULT;
+  const image = ev.image_url || null;
+  const regEnabled = isRegistrationEnabled(ev);
 
   return (
     <div
       className="card-lift"
-      style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+      style={{
+        border: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(255,255,255,0.01)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%"
+      }}
     >
       <div
         style={{
-          height: 160, position: "relative",
+          height: 200,
+          position: "relative",
           background: image
             ? `url(${image}) center/cover no-repeat`
             : "linear-gradient(135deg, #0d0000, #1a0505)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         {!image && (
-          <div
-            style={{
-              fontSize: "4rem", opacity: 0.18,
-              animation: `floatY ${3 + idx * 0.3}s ease-in-out infinite`,
-              animationDelay: `${idx * 0.2}s`,
-            }}
-          >
-            {emoji}
-          </div>
-        )}
-        <div style={{ position: "absolute", top: 12, left: 12, background: C.red, padding: "3px 10px", fontFamily: "'Bebas Neue', cursive", fontSize: "0.68rem", letterSpacing: "0.1em" }}>
-          {category}
-        </div>
-        {date && (
-          <div style={{ position: "absolute", bottom: 10, right: 12, background: "rgba(0,0,0,0.6)", padding: "3px 10px", fontSize: "0.65rem", color: C.gray }}>
-            {date}
-          </div>
+          <div style={{ fontSize: "3rem", opacity: 0.18 }}>🏆</div>
         )}
       </div>
 
-      <div style={{ padding: "20px 24px 24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div style={{ padding: "24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div>
-          <div className="bebas" style={{ fontSize: "1rem", letterSpacing: "0.03em", marginBottom: 10 }}>{title}</div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            {participants && (
-              <span style={{ fontSize: "0.73rem", color: C.gray }}>
-                <span style={{ color: C.red }}>●</span> {participants} Participants
+          <h3 className="bebas" style={{ fontSize: "1.35rem", letterSpacing: "0.03em", marginBottom: 12, color: "#FFFFFF" }}>
+            {title}
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+            {date && (
+              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                📅 {date}
               </span>
             )}
-            <span style={{ fontSize: "0.73rem", color: C.gray }}>● {sport}</span>
-            {location && <span style={{ fontSize: "0.73rem", color: C.gray }}>📍 {location}</span>}
+            {location && (
+              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                📍 {location}
+              </span>
+            )}
           </div>
         </div>
-        <button
-          className="red-btn"
-          style={{ width: "100%", marginTop: 18, padding: "10px 0", fontSize: "0.8rem", letterSpacing: "0.05em" }}
-          onClick={() => navigate(`/register/${ev.id}`)}
-        >
-          REGISTER NOW
-        </button>
+
+        {regEnabled && (
+          <button
+            className="red-btn"
+            style={{ width: "100%", padding: "12px 0", fontSize: "0.85rem", letterSpacing: "0.05em", cursor: "pointer" }}
+            onClick={() => navigate(`/register/${ev.id}`)}
+          >
+            REGISTER NOW
+          </button>
+        )}
       </div>
     </div>
   );
@@ -84,10 +90,10 @@ function EventCard({ ev, idx }) {
 function EventSkeleton() {
   return (
     <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden" }}>
-      <div style={{ height: 160, background: "rgba(255,255,255,0.03)", animation: "pulse 1.5s ease-in-out infinite" }} />
-      <div style={{ padding: "20px 24px 24px" }}>
-        <div style={{ height: 16, background: "rgba(255,255,255,0.05)", marginBottom: 12, borderRadius: 2, animation: "pulse 1.5s ease-in-out infinite" }} />
-        <div style={{ height: 12, width: "60%", background: "rgba(255,255,255,0.03)", borderRadius: 2, animation: "pulse 1.5s ease-in-out infinite" }} />
+      <div style={{ height: 200, background: "rgba(255,255,255,0.03)", animation: "pulse 1.5s ease-in-out infinite" }} />
+      <div style={{ padding: "24px" }}>
+        <div style={{ height: 18, background: "rgba(255,255,255,0.05)", marginBottom: 12, borderRadius: 2, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ height: 14, width: "60%", background: "rgba(255,255,255,0.03)", borderRadius: 2, animation: "pulse 1.5s ease-in-out infinite" }} />
       </div>
     </div>
   );
@@ -101,9 +107,9 @@ export default function Events() {
     <section id="events" style={{ padding: "100px 5%" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
         <div>
-          <div className="eyebrow">Event Showcase</div>
+          <div className="eyebrow">Upcoming Events</div>
           <h2 className="bebas" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 0.92 }}>
-            EVENTS WE&apos;VE<br /><span style={{ color: C.red }}>MADE LEGENDARY</span>
+            JOIN THE<br /><span style={{ color: C.red }}>NEXT EXPERIENCE</span>
           </h2>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
@@ -131,26 +137,53 @@ export default function Events() {
       )}
 
       {loading && (
-        <div className="g3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {Array.from({ length: 6 }).map((_, i) => <EventSkeleton key={i} />)}
+        <div className="g3" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+          {Array.from({ length: 3 }).map((_, i) => <EventSkeleton key={i} />)}
         </div>
       )}
 
       {!loading && !error && events.length > 0 && (
-        <div className="g3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {events.map((ev, i) => (
-            <EventCard key={ev.id} ev={ev} idx={i} />
+        <div className="g3" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+          {events.map((ev) => (
+            <EventCard key={ev.id} ev={ev} />
           ))}
         </div>
       )}
 
       {!loading && !error && events.length === 0 && (
-        <div style={{ textAlign: "center", padding: "80px 20px", color: C.gray }}>
-          <div style={{ fontSize: "3rem", marginBottom: 16 }}>📅</div>
-          <p style={{ fontSize: "1rem", marginBottom: 24 }}>No upcoming events yet.</p>
-          <button className="out-btn" onClick={() => navigate("/events")}>
-            VIEW ALL EVENTS
-          </button>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "80px 20px",
+            border: "1px dashed rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.005)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ color: C.red, opacity: 0.8, marginBottom: 20 }}
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+            <circle cx="12" cy="16" r="1.5" />
+          </svg>
+          <p style={{ fontSize: "1.1rem", color: "#FFFFFF", fontWeight: 500, margin: "0 0 8px 0" }}>No upcoming events.</p>
+          <p style={{ fontSize: "0.85rem", color: C.gray, margin: "0 0 24px 0", maxWidth: "280px" }}>
+            Check back later! The administrator has not scheduled any upcoming events yet.
+          </p>
         </div>
       )}
     </section>

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
-const ADMIN_EMAIL = "sportxtremeevents@gmail.com";
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "sportxtremeevents@gmail.com";
 
 /**
  * Admin authentication using real Supabase Auth
@@ -14,21 +14,11 @@ export function AuthProvider({ children }) {
 
   // Validate session on mount and listen to changes
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && session.user.email === ADMIN_EMAIL) {
-        setIsAuthenticated(true);
-        setAdminEmail(session.user.email);
-      } else {
-        setIsAuthenticated(false);
-        setAdminEmail(null);
-      }
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    let mounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
       if (session?.user && session.user.email === ADMIN_EMAIL) {
         setIsAuthenticated(true);
         setAdminEmail(session.user.email);
@@ -40,6 +30,7 @@ export function AuthProvider({ children }) {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -59,7 +50,11 @@ export function AuthProvider({ children }) {
     }
 
     if (data.user?.email !== ADMIN_EMAIL) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn("Signout after unauthorized access attempt failed:", err);
+      }
       return { success: false, error: "Access denied. Admin account required." };
     }
 
@@ -69,9 +64,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    setIsAuthenticated(false);
-    setAdminEmail(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("Supabase signOut error:", err.message || err);
+    } finally {
+      setIsAuthenticated(false);
+      setAdminEmail(null);
+    }
   }, []);
 
   return (

@@ -5,27 +5,31 @@ import { useEvents } from "../hooks/useEvents";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const CAT_EMOJI = {
-  CORPORATE: "🏏", MARATHON: "🏃", SCHOOL: "🎓",
-  LEAGUE: "⚽", CYCLING: "🚴", AQUATIC: "🏊",
-  DEFAULT: "🏆",
+const isRegistrationEnabled = (ev) => {
+  if (ev.status && ev.status !== "upcoming") return false;
+
+  if (ev.registration_deadline) {
+    const deadline = new Date(ev.registration_deadline);
+    const today = new Date();
+    deadline.setHours(23, 59, 59, 999);
+    if (today > deadline) return false;
+  }
+
+  return true;
 };
 
-function EventCard({ ev, idx }) {
+function EventCard({ ev }) {
   const navigate = useNavigate();
   const title        = ev.title    || ev.name || "Untitled Event";
-  const category     = (ev.category || ev.cat || "EVENT").toUpperCase();
-  const sport        = ev.sport    || "—";
   const location     = ev.location || "";
-  const participants = ev.participants || ev.n || "";
   const image        = ev.image_url || null;
-  const emoji        = CAT_EMOJI[category] || CAT_EMOJI.DEFAULT;
+  const regEnabled   = isRegistrationEnabled(ev);
 
   const date = ev.event_date
     ? new Date(ev.event_date).toLocaleDateString("en-IN", {
         day: "numeric", month: "long", year: "numeric",
       })
-    : ev.ed || "";
+    : "";
 
   return (
     <article
@@ -49,71 +53,39 @@ function EventCard({ ev, idx }) {
         }}
       >
         {!image && (
-          <div
-            style={{
-              fontSize: "5rem", opacity: 0.15,
-              animation: `floatY ${3 + (idx % 4) * 0.4}s ease-in-out infinite`,
-              animationDelay: `${(idx % 4) * 0.2}s`,
-            }}
-          >
-            {emoji}
-          </div>
-        )}
-        <div
-          style={{
-            position: "absolute", top: 14, left: 14,
-            background: C.red, padding: "4px 12px",
-            fontFamily: "'Bebas Neue', cursive", fontSize: "0.72rem", letterSpacing: "0.1em",
-          }}
-        >
-          {category}
-        </div>
-        {date && (
-          <div
-            style={{
-              position: "absolute", bottom: 12, right: 14,
-              background: "rgba(0,0,0,0.7)", padding: "4px 12px",
-              fontSize: "0.68rem", color: C.gray, backdropFilter: "blur(4px)",
-            }}
-          >
-            📅 {date}
-          </div>
+          <div style={{ fontSize: "3rem", opacity: 0.18 }}>🏆</div>
         )}
       </div>
 
       {/* Body */}
-      <div style={{ padding: "22px 26px 28px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 14 }}>
+      <div style={{ padding: "24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 14 }}>
         <div>
-          <h3 className="bebas" style={{ fontSize: "1.15rem", letterSpacing: "0.04em", color: "#fff", lineHeight: 1.2, marginBottom: 10 }}>
+          <h3 className="bebas" style={{ fontSize: "1.35rem", letterSpacing: "0.03em", marginBottom: 12, color: "#FFFFFF" }}>
             {title}
           </h3>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", marginTop: 4 }}>
-            {sport && (
-              <span style={{ fontSize: "0.75rem", color: C.gray }}>
-                <span style={{ color: C.red }}>⚡</span> {sport}
-              </span>
-            )}
-            {participants && (
-              <span style={{ fontSize: "0.75rem", color: C.gray }}>
-                <span style={{ color: C.red }}>●</span> {participants} Participants
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+            {date && (
+              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                📅 {date}
               </span>
             )}
             {location && (
-              <span style={{ fontSize: "0.75rem", color: C.gray }}>
+              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
                 📍 {location}
               </span>
             )}
           </div>
         </div>
 
-        <button
-          className="red-btn"
-          style={{ width: "100%", marginTop: 8, padding: "10px 0", fontSize: "0.82rem", letterSpacing: "0.05em" }}
-          onClick={() => navigate(`/register/${ev.id}`)}
-        >
-          REGISTER NOW
-        </button>
+        {regEnabled && (
+          <button
+            className="red-btn"
+            style={{ width: "100%", padding: "12px 0", fontSize: "0.85rem", letterSpacing: "0.05em", cursor: "pointer" }}
+            onClick={() => navigate(`/register/${ev.id}`)}
+          >
+            REGISTER NOW
+          </button>
+        )}
       </div>
     </article>
   );
@@ -123,15 +95,13 @@ function EventSkeleton() {
   return (
     <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden" }}>
       <div style={{ height: 200, background: "rgba(255,255,255,0.03)" }} />
-      <div style={{ padding: "22px 26px 28px" }}>
-        <div style={{ height: 18, background: "rgba(255,255,255,0.05)", marginBottom: 14, borderRadius: 2 }} />
-        <div style={{ height: 13, width: "70%", background: "rgba(255,255,255,0.03)", borderRadius: 2 }} />
+      <div style={{ padding: "24px" }}>
+        <div style={{ height: 18, background: "rgba(255,255,255,0.05)", marginBottom: 12, borderRadius: 2 }} />
+        <div style={{ height: 14, width: "60%", background: "rgba(255,255,255,0.03)", borderRadius: 2 }} />
       </div>
     </div>
   );
 }
-
-const CATEGORIES = ["All", "Corporate", "Marathon", "School", "League", "Cycling", "Aquatic"];
 
 export default function EventsPage() {
   const navigate   = useNavigate();
@@ -139,10 +109,12 @@ export default function EventsPage() {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
+  const categories = ["All", ...new Set(events.map((ev) => ev.category).filter(Boolean))];
+
   const filtered = filter === "All"
     ? events
     : events.filter((ev) => {
-        const cat = (ev.category || ev.cat || "").toLowerCase();
+        const cat = (ev.category || "").toLowerCase();
         return cat === filter.toLowerCase();
       });
 
@@ -219,7 +191,7 @@ export default function EventsPage() {
           background: "rgba(255,255,255,0.01)",
         }}
       >
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             className={`sport-tab${filter === cat ? " on" : ""}`}
@@ -298,7 +270,7 @@ export default function EventsPage() {
                 ? `No events matching "${search}". Try a different search term.`
                 : filter !== "All"
                 ? `No ${filter} events yet. Try a different category.`
-                : "No upcoming events yet."}
+                : "No upcoming events."}
             </p>
             {filter !== "All" && (
               <button className="out-btn" onClick={() => setFilter("All")}>

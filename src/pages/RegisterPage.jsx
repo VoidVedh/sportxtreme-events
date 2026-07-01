@@ -95,6 +95,21 @@ export default function RegisterPage() {
             return;
           }
         }
+
+        // 3. Prevent duplicate registrations for this event by checking the database
+        const { data: existingReg, error: checkError } = await supabase
+          .from("registrations")
+          .select("id")
+          .eq("event_id", selectedEventId)
+          .eq("email", email.trim())
+          .limit(1);
+
+        if (checkError) {
+          console.warn("Error checking for duplicate registration:", checkError.message);
+        } else if (existingReg && existingReg.length > 0) {
+          setStatus({ loading: false, success: false, error: "You are already registered for this event with this email address." });
+          return;
+        }
       }
       const payload = {
         event_id: selectedEventId,
