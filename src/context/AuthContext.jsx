@@ -16,6 +16,26 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
+    async function loadSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (session?.user && session.user.email === ADMIN_EMAIL) {
+          setIsAuthenticated(true);
+          setAdminEmail(session.user.email);
+        } else {
+          setIsAuthenticated(false);
+          setAdminEmail(null);
+        }
+      } catch (err) {
+        console.error("Auth init error:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 

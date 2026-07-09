@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import SponsorModal from "./components/SponsorModal";
 import Home from "./pages/Home";
 import EventsPage from "./pages/EventsPage";
 import GalleryPage from "./pages/GalleryPage";
@@ -30,7 +29,6 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <SponsorModal />
       </>
     </AuthProvider>
   );

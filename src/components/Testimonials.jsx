@@ -42,7 +42,19 @@ export default function Testimonials() {
   };
 
   if (testimonials.length === 0) {
-    return null;
+    return (
+      <section style={{ padding: "100px 5%" }}>
+        <div style={{ textAlign: "center", marginBottom: 64 }}>
+          <div className="eyebrow" style={{ justifyContent: "center" }}>Client Voices</div>
+          <h2 className="bebas" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 0.92 }}>
+            WHAT THEY SAY<br /><span style={{ color: C.red }}>ABOUT US</span>
+          </h2>
+        </div>
+        <div style={{ textAlign: "center", color: C.gray, fontSize: "1.1rem" }}>
+          No testimonials available yet.
+        </div>
+      </section>
+    );
   }
 
   const current = testimonials[currentIndex];

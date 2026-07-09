@@ -14,7 +14,7 @@ export const SPORTS_CATS = {
     label: "Outdoor Sports",
     emoji: "⚽",
     desc: "From cricket pitches to football grounds — we orchestrate outdoor competitions with professional precision and passion.",
-    list: ["Cricket", "Football", "Basketball", "Tennis", "Pickleball"],
+    list: ["Cricket", "Football", "Team Events"],
   },
   indoor: {
     label: "Indoor Sports",
@@ -26,13 +26,13 @@ export const SPORTS_CATS = {
     label: "Aquatic Sports",
     emoji: "🏊",
     desc: "Water sports events with proper timing systems, robust safety protocols, and spectator setups.",
-    list: ["Swimming", "Aqua Fitness", "Aqua Zumba"],
+    list: ["Swimming"],
   },
   largescale: {
     label: "Large Scale Events",
     emoji: "🏃",
     desc: "Mass participation events uniting athletes — planned step-by-step from start line to finish line.",
-    list: ["Marathon", "Half Marathon", "Walkathon", "Cyclothon", "Relay Events"],
+    list: ["Marathon"],
   },
 };
 
@@ -90,7 +90,7 @@ export const SPONSOR_BENEFITS = [
 
 // ─── CONTACT INFO ─────────────────────────────────────────────────────────────
 export const CONTACT_INFO = [
-  { icon: "📞", label: "Call Us",   val: "+91 8975671622" },
+  { icon: "📞", label: "Call Us",   val: "+91 89765 71622\n+91 91368 90309" },
   { icon: "✉️", label: "Email",     val: "sportxtremeevents@gmail.com" },
   { icon: "📍", label: "Location",  val: "Mumbai, Maharashtra" },
 ];

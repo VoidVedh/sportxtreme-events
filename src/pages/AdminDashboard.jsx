@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { C } from "../data/content";
 import { supabase } from "../lib/supabase";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import imageCompression from "browser-image-compression";
 
 const GALLERY_CATEGORIES = ["Corporate", "Marathon", "School", "League", "Cycling", "Aquatic", "Badminton", "General"];
 
@@ -28,15 +29,14 @@ function formatCaption(caption) {
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { logout, adminEmail } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("registrations");
+  const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Data states
   const [contacts, setContacts] = useState([]);
-  const [proposals, setProposals] = useState([]);
   const [events, setEvents] = useState([]);
-  const [testimonials, setTestimonials] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [registrations, setRegistrations] = useState([]);
 
@@ -54,9 +54,7 @@ export default function AdminDashboard() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
 
-  // Form states - Testimonials
-  const [editingTestimonial, setEditingTestimonial] = useState(null);
-  const [showTestimonialForm, setShowTestimonialForm] = useState(false);
+
 
   // Upload states - Gallery
   const [uploadCaption, setUploadCaption] = useState("");
@@ -79,29 +77,13 @@ export default function AdminDashboard() {
       if (contactsError) throw contactsError;
       setContacts(contactsData || []);
 
-      // 2. Fetch Proposals
-      const { data: proposalsData, error: proposalsError } = await supabase
-        .from("proposals")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (proposalsError) throw proposalsError;
-      setProposals(proposalsData || []);
-
-      // 3. Fetch Events
+      // 2. Fetch Events
       const { data: eventsData, error: eventsError } = await supabase
         .from("events")
         .select("*")
         .order("event_date", { ascending: false });
       if (eventsError) throw eventsError;
       setEvents(eventsData || []);
-
-      // 4. Fetch Testimonials
-      const { data: testimonialsData, error: testimonialsError } = await supabase
-        .from("testimonials")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (testimonialsError) throw testimonialsError;
-      setTestimonials(testimonialsData || []);
 
       // 5. Fetch Gallery
       const { data: galleryData, error: galleryError } = await supabase
@@ -145,7 +127,7 @@ export default function AdminDashboard() {
 
   // ── QR SCANNER LOGIC ──
   useEffect(() => {
-    if (activeTab !== "scanner") return;
+    if (activeTab !== "registrations" || !showScanner) return;
 
     let scanner;
     const startScanner = () => {
@@ -172,7 +154,7 @@ export default function AdminDashboard() {
         scanner.clear().catch(err => console.error("Failed to clear scanner on unmount:", err));
       }
     };
-  }, [activeTab]);
+  }, [activeTab, showScanner]);
 
   const handleCheckInTicket = async (ticketId) => {
     setScannerLoading(true);
@@ -384,112 +366,30 @@ export default function AdminDashboard() {
     }
   };
 
-  // ── TESTIMONIALS CRUD ──
-  const handleDeleteTestimonial = async (id) => {
-    if (window.confirm("Are you sure you want to delete this testimonial?")) {
-      const { error: deleteError } = await supabase.from("testimonials").delete().eq("id", id);
-      if (deleteError) {
-        alert("Failed to delete testimonial: " + deleteError.message);
-      } else {
-        setTestimonials(testimonials.filter(t => t.id !== id));
-      }
+
+
+  const compressImageToWebP = async (file) => {
+    if (file.type === "image/gif") {
+      return file;
     }
-  };
-
-  const handleEditTestimonial = (testimonial) => {
-    setEditingTestimonial(testimonial);
-    setShowTestimonialForm(true);
-  };
-
-  const handleAddTestimonial = () => {
-    setEditingTestimonial(null);
-    setShowTestimonialForm(true);
-  };
-
-  const handleSaveTestimonial = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const testimonialPayload = {
-      name: formData.get("name"),
-      role: formData.get("role"),
-      text: formData.get("text"),
-      stars: parseInt(formData.get("stars") || "5", 10),
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: "image/webp"
     };
-
-    if (editingTestimonial) {
-      const { error: updateError } = await supabase
-        .from("testimonials")
-        .update(testimonialPayload)
-        .eq("id", editingTestimonial.id);
-      if (updateError) {
-        alert("Failed to update testimonial: " + updateError.message);
-      } else {
-        fetchData();
-        setShowTestimonialForm(false);
-        setEditingTestimonial(null);
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from("testimonials")
-        .insert([testimonialPayload]);
-      if (insertError) {
-        alert("Failed to create testimonial: " + insertError.message);
-      } else {
-        fetchData();
-        setShowTestimonialForm(false);
-        setEditingTestimonial(null);
-      }
+    try {
+      const compressedBlob = await imageCompression(file, options);
+      const lastDot = file.name.lastIndexOf(".");
+      const nameWithoutExt = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+      return new File([compressedBlob], `${nameWithoutExt}.webp`, {
+        type: "image/webp",
+        lastModified: Date.now(),
+      });
+    } catch (error) {
+      console.error("Compression failed, using original file:", error);
+      return file;
     }
-  };
-
-  const compressImageToWebP = (file, quality = 0.8, maxWidth = 1920) => {
-    return new Promise((resolve, reject) => {
-      if (file.type === "image/gif") {
-        resolve(file);
-        return;
-      }
-
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(img.src);
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Canvas conversion to Blob failed"));
-              return;
-            }
-            const originalName = file.name;
-            const lastDot = originalName.lastIndexOf(".");
-            const nameWithoutExt = lastDot !== -1 ? originalName.substring(0, lastDot) : originalName;
-            
-            const webpFile = new File([blob], `${nameWithoutExt}.webp`, {
-              type: "image/webp",
-              lastModified: Date.now(),
-            });
-            resolve(webpFile);
-          },
-          "image/webp",
-          quality
-        );
-      };
-      img.onerror = (err) => reject(err);
-    });
   };
 
   // ── GALLERY CRUD (WITH STORAGE) ──
@@ -716,6 +616,7 @@ export default function AdminDashboard() {
       console.groupEnd();
 
       console.log("[GalleryDelete] ✅ FULL DELETE COMPLETE for id:", item.id);
+      alert("Image deleted successfully!");
 
     } catch (err) {
       console.error("[GalleryDelete] ❌ UNHANDLED ERROR thrown");
@@ -777,18 +678,20 @@ export default function AdminDashboard() {
         <div style={{ width: 250, background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(255,255,255,0.06)", padding: "24px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[
-              { id: "overview", label: "Overview", count: null },
               { id: "registrations", label: "Registrations", count: registrations.length },
-              { id: "scanner", label: "QR Scanner", count: null },
               { id: "contacts", label: "Contacts", count: contacts.length },
-              { id: "proposals", label: "Proposals", count: proposals.length },
               { id: "events", label: "Events", count: events.length },
-              { id: "testimonials", label: "Testimonials", count: testimonials.length },
               { id: "gallery", label: "Gallery", count: gallery.length }
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setShowEventForm(false); setShowTestimonialForm(false); setScanResult({ success: null, message: "" }); }}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setShowEventForm(false);
+                  setShowTestimonialForm(false);
+                  setShowScanner(false);
+                  setScanResult({ success: null, message: "" });
+                }}
                 style={{
                   width: "100%",
                   padding: "12px 16px",
@@ -822,69 +725,22 @@ export default function AdminDashboard() {
 
           {loading && <div style={{ color: C.gray, marginBottom: 16 }}>Loading real-time records...</div>}
 
-          {/* ── OVERVIEW TAB ── */}
-          {activeTab === "overview" && (
-            <>
-              <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 24 }}>DASHBOARD OVERVIEW</h2>
-              
-              {/* Cards Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16, marginBottom: 40 }}>
-                {[
-                  { title: "Total Events", value: events.length, color: C.red, icon: "🏆" },
-                  { title: "Total Registrations", value: registrations.length, color: "#fff", icon: "📝" },
-                  { title: "Checked-In (Attended)", value: registrations.filter(r => r.status === "attended").length, color: "#25D366", icon: "✅" },
-                  { title: "Pending Approvals", value: registrations.filter(r => r.status === "pending").length, color: "#FFA500", icon: "⏳" },
-                  { title: "Gallery Images", value: gallery.length, color: "#fff", icon: "📸" },
-                  { title: "Testimonials", value: testimonials.length, color: "#fff", icon: "💬" }
-                ].map((card, idx) => (
-                  <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", padding: "24px", position: "relative" }}>
-                    <div style={{ fontSize: "1.2rem", marginBottom: 8 }}>{card.icon}</div>
-                    <div style={{ color: C.gray, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                      {card.title}
-                    </div>
-                    <div className="bebas" style={{ fontSize: "2.5rem", color: card.color, lineHeight: 1 }}>
-                      {card.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Attendance Chart (Dynamic SVGs & CSS) */}
-              <h3 className="bebas" style={{ fontSize: "1.5rem", marginBottom: 20 }}>EVENT ATTENDANCE ANALYTICS</h3>
-              <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.06)", padding: "28px" }}>
-                {events.length === 0 ? (
-                  <div style={{ color: C.gray, textAlign: "center" }}>No events defined. Attendance metrics will display here.</div>
-                ) : (
-                  events.map(ev => {
-                    const regForEv = registrations.filter(r => r.event_id === ev.id);
-                    const total = regForEv.length;
-                    const attended = regForEv.filter(r => r.status === "attended").length;
-                    const pct = total > 0 ? Math.round((attended / total) * 100) : 0;
-                    return (
-                      <div key={ev.id} style={{ marginBottom: 20 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: "0.88rem" }}>
-                          <span style={{ fontWeight: 600 }}>{ev.title}</span>
-                          <span style={{ color: C.red }}>
-                            {attended} / {total} Checked In ({pct}%)
-                          </span>
-                        </div>
-                        <div style={{ height: 10, background: "rgba(255,255,255,0.06)", borderRadius: 5, overflow: "hidden" }}>
-                          <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, #E50914, #ff5c5c)", borderRadius: 5 }} />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </>
-          )}
-
           {/* ── REGISTRATIONS TAB ── */}
           {activeTab === "registrations" && (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
                 <h2 className="bebas" style={{ fontSize: "2rem" }}>REGISTRATIONS</h2>
                 <div style={{ display: "flex", gap: 12 }}>
+                  <button 
+                    onClick={() => {
+                      setShowScanner(!showScanner);
+                      setScanResult({ success: null, message: "" });
+                    }} 
+                    className="red-btn" 
+                    style={{ padding: "10px 20px" }}
+                  >
+                    {showScanner ? "📋 VIEW LIST" : "📷 SCAN QR TICKET"}
+                  </button>
                   <button onClick={handleExportCSV} className="out-btn" style={{ padding: "10px 20px" }}>
                     📥 EXPORT CSV
                   </button>
@@ -893,6 +749,62 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </div>
+
+              {showScanner ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 32, marginBottom: 40 }}>
+                  {/* Camera scanner view */}
+                  <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", padding: "28px", textAlign: "center" }}>
+                    <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>CAMERA FEED</div>
+                    <div id="qr-reader" style={{ width: "100%", background: "#111", border: "1px solid rgba(255,255,255,0.05)" }} />
+                    <div style={{ fontSize: "0.78rem", color: C.gray, marginTop: 12 }}>
+                      Hold the ticket QR code in front of the camera to scan and automatically register attendance.
+                    </div>
+                  </div>
+
+                  {/* Manual entry & results */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", padding: "28px" }}>
+                      <h3 className="bebas" style={{ fontSize: "1.2rem", marginBottom: 16 }}>MANUAL CHECK-IN</h3>
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <input
+                          placeholder="Enter Ticket ID (e.g. REG-10001 or UUID)..."
+                          value={manualTicketId}
+                          onChange={e => setManualTicketId(e.target.value)}
+                          className="form-f"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          onClick={() => handleCheckInTicket(manualTicketId)}
+                          disabled={scannerLoading || !manualTicketId.trim()}
+                          className="red-btn"
+                          style={{ padding: "0 24px" }}
+                        >
+                          {scannerLoading ? "VERIFYING…" : "CHECK-IN"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {scanResult.success !== null && (
+                      <div style={{
+                        padding: "24px",
+                        border: "1px solid",
+                        background: scanResult.success ? "rgba(37,211,102,0.1)" : "rgba(229,9,20,0.1)",
+                        borderColor: scanResult.success ? "#25D366" : C.red,
+                        textAlign: "center"
+                      }}>
+                        <div style={{ fontSize: "2rem", marginBottom: 8 }}>{scanResult.success ? "✅" : "❌"}</div>
+                        <h4 className="bebas" style={{ fontSize: "1.3rem", color: scanResult.success ? "#25D366" : C.red, marginBottom: 8 }}>
+                          {scanResult.success ? "VALID CHECK-IN" : "INVALID CHECK-IN"}
+                        </h4>
+                        <p style={{ fontSize: "0.9rem", color: "#fff", lineHeight: 1.5 }}>
+                          {scanResult.message}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
 
               {/* Filters Box */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
@@ -1011,68 +923,8 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
-
-          {/* ── QR SCANNER TAB ── */}
-          {activeTab === "scanner" && (
-            <>
-              <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 24 }}>QR CODE GATE CHECK-IN</h2>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 32 }}>
-                {/* Camera scanner view */}
-                <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", padding: "28px", textAlign: "center" }}>
-                  <div className="eyebrow" style={{ justifyContent: "center", marginBottom: 12 }}>CAMERA FEED</div>
-                  <div id="qr-reader" style={{ width: "100%", background: "#111", border: "1px solid rgba(255,255,255,0.05)" }} />
-                  <div style={{ fontSize: "0.78rem", color: C.gray, marginTop: 12 }}>
-                    Hold the ticket QR code in front of the camera to scan and automatically register attendance.
-                  </div>
-                </div>
-
-                {/* Manual text-id entry & results */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                  {/* Manual entry */}
-                  <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", padding: "28px" }}>
-                    <h3 className="bebas" style={{ fontSize: "1.2rem", marginBottom: 16 }}>MANUAL CHECK-IN</h3>
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <input
-                        placeholder="Enter Ticket ID (e.g. REG-10001 or UUID)..."
-                        value={manualTicketId}
-                        onChange={e => setManualTicketId(e.target.value)}
-                        className="form-f"
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        onClick={() => handleCheckInTicket(manualTicketId)}
-                        disabled={scannerLoading || !manualTicketId.trim()}
-                        className="red-btn"
-                        style={{ padding: "0 24px" }}
-                      >
-                        {scannerLoading ? "VERIFYING…" : "CHECK-IN"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Scan results panel */}
-                  {scanResult.success !== null && (
-                    <div style={{
-                      padding: "24px",
-                      border: "1px solid",
-                      background: scanResult.success ? "rgba(37,211,102,0.1)" : "rgba(229,9,20,0.1)",
-                      borderColor: scanResult.success ? "#25D366" : C.red,
-                      textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: "2rem", marginBottom: 8 }}>{scanResult.success ? "✅" : "❌"}</div>
-                      <h4 className="bebas" style={{ fontSize: "1.3rem", color: scanResult.success ? "#25D366" : C.red, marginBottom: 8 }}>
-                        {scanResult.success ? "VALID ENTRY" : "INVALID / DENIED ENTRY"}
-                      </h4>
-                      <p style={{ fontSize: "0.9rem", color: "#fff", lineHeight: 1.5 }}>
-                        {scanResult.message}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+        </>
+      )}
 
           {/* ── CONTACTS TAB ── */}
           {activeTab === "contacts" && (
@@ -1115,48 +967,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ── PROPOSALS TAB ── */}
-          {activeTab === "proposals" && (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <h2 className="bebas" style={{ fontSize: "2rem" }}>PROPOSALS</h2>
-                <button onClick={fetchData} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", cursor: "pointer", fontSize: "0.8rem" }}>
-                  ↻ REFRESH
-                </button>
-              </div>
 
-              <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Company</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Event Type</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Participants / Contact</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Budget</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Description</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {proposals.length === 0 ? (
-                      <tr><td colSpan={6} style={{ padding: "32px", textAlign: "center", color: C.gray }}>No proposals received yet.</td></tr>
-                    ) : (
-                      proposals.map((proposal) => (
-                        <tr key={proposal.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "16px", fontSize: "0.9rem" }}>{proposal.company_name}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem" }}>{proposal.event_type}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem" }}>{proposal.participants || "—"}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem" }}>{proposal.budget ? `₹${proposal.budget}` : "—"}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem", maxWidth: 300 }}>{proposal.description}</td>
-                          <td style={{ padding: "16px", fontSize: "0.85rem", color: C.gray }}>{new Date(proposal.created_at).toLocaleDateString()}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
 
           {/* ── EVENTS TAB ── */}
           {activeTab === "events" && (
@@ -1273,75 +1084,7 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {/* ── TESTIMONIALS TAB ── */}
-          {activeTab === "testimonials" && (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <h2 className="bebas" style={{ fontSize: "2rem" }}>TESTIMONIALS</h2>
-                <button onClick={handleAddTestimonial} className="red-btn" style={{ padding: "10px 20px" }}>
-                  + ADD TESTIMONIAL
-                </button>
-              </div>
 
-              {showTestimonialForm && (
-                <div style={{ border: "1px solid rgba(229,9,20,0.3)", background: "rgba(229,9,20,0.05)", padding: "24px", marginBottom: 24 }}>
-                  <h3 className="bebas" style={{ fontSize: "1.5rem", marginBottom: 16 }}>
-                    {editingTestimonial ? "EDIT TESTIMONIAL" : "ADD TESTIMONIAL"}
-                  </h3>
-                  <form onSubmit={handleSaveTestimonial} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    <input name="name" defaultValue={editingTestimonial?.name} placeholder="Client Name *" required style={inputStyle} />
-                    <input name="role" defaultValue={editingTestimonial?.role} placeholder="Role / Company *" required style={inputStyle} />
-                    <input name="stars" defaultValue={editingTestimonial?.stars || "5"} type="number" min="1" max="5" placeholder="Stars (1-5) *" required style={inputStyle} />
-                    <textarea name="text" defaultValue={editingTestimonial?.text} placeholder="Review Text *" required style={{ gridColumn: "1 / -1", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", minHeight: "100px" }} />
-                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: 12 }}>
-                      <button type="submit" className="red-btn" style={{ padding: "12px 24px" }}>
-                        {editingTestimonial ? "UPDATE TESTIMONIAL" : "ADD TESTIMONIAL"}
-                      </button>
-                      <button type="button" onClick={() => { setShowTestimonialForm(false); setEditingTestimonial(null); }} style={{ padding: "12px 24px", background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", cursor: "pointer" }}>
-                        CANCEL
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Name</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Role</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Stars</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Text</th>
-                      <th style={{ padding: "16px", textAlign: "left", fontSize: "0.85rem", color: C.gray }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {testimonials.length === 0 ? (
-                      <tr><td colSpan={5} style={{ padding: "32px", textAlign: "center", color: C.gray }}>No testimonials exist. Add your first testimonial above.</td></tr>
-                    ) : (
-                      testimonials.map((t) => (
-                        <tr key={t.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "16px", fontSize: "0.9rem" }}>{t.name}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem", color: C.gray }}>{t.role}</td>
-                          <td style={{ padding: "16px", fontSize: "0.9rem", color: C.red }}>{"★".repeat(t.stars || 5)}</td>
-                          <td style={{ padding: "16px", fontSize: "0.85rem", color: C.gray, maxWidth: 300 }}>{t.text}</td>
-                          <td style={{ padding: "16px", whiteSpace: "nowrap" }}>
-                            <button onClick={() => handleEditTestimonial(t)} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "6px 12px", cursor: "pointer", marginRight: 8, fontSize: "0.75rem" }}>
-                              EDIT
-                            </button>
-                            <button onClick={() => handleDeleteTestimonial(t.id)} style={{ background: "none", border: "1px solid rgba(229,9,20,0.3)", color: C.red, padding: "6px 12px", cursor: "pointer", fontSize: "0.75rem" }}>
-                              DELETE
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
 
           {/* ── GALLERY TAB ── */}
           {activeTab === "gallery" && (

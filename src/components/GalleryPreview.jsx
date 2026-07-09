@@ -4,9 +4,9 @@ import { C } from "../data/content";
 import { supabase } from "../lib/supabase";
 
 function formatCaption(caption) {
-  if (!caption) return "Untitled Image";
+  if (!caption) return "SportXtreme Event";
   const trimmed = caption.trim();
-  if (!trimmed) return "Untitled Image";
+  if (!trimmed) return "SportXtreme Event";
   const lower = trimmed.toLowerCase();
   if (
     lower.endsWith(".jpg") ||
@@ -14,9 +14,14 @@ function formatCaption(caption) {
     lower.endsWith(".png") ||
     lower.endsWith(".webp") ||
     lower.endsWith(".gif") ||
-    lower.match(/^[a-z0-9-]+\.[a-z0-9]+$/)
+    lower.includes("whatsapp image") ||
+    lower.startsWith("img_") ||
+    lower.startsWith("img-") ||
+    lower.startsWith("dsc") ||
+    lower.match(/\.(jpg|jpeg|png|webp|gif|bmp)$/) ||
+    lower.match(/^[a-z0-9-_]+\.[a-z0-9]+$/)
   ) {
-    return "Untitled Image";
+    return "SportXtreme Event";
   }
   return trimmed;
 }

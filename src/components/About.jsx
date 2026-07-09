@@ -126,6 +126,44 @@ export default function About() {
           </div>
         </div>
       </div>
+
+      {/* Our Team Section */}
+      <div style={{ marginTop: 80, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 64 }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div className="eyebrow" style={{ justifyContent: "center" }}>Executive Leadership</div>
+          <h3 className="bebas" style={{ fontSize: "clamp(2.5rem, 5vw, 3.5rem)", lineHeight: 1 }}>
+            OUR <span style={{ color: C.red }}>TEAM</span>
+          </h3>
+        </div>
+
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 32, maxWidth: 800, margin: "0 auto" }}>
+          {/* Card 1 */}
+          <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            {/* Image Placeholder */}
+            <div style={{ width: 140, height: 140, borderRadius: "50%", background: "rgba(229,9,20,0.05)", border: `1px solid rgba(229,9,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, fontSize: "3rem" }}>
+              👤
+            </div>
+            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
+            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Director of Operations</div>
+            <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
+              Oversees event logistics, planning, and partner relations to ensure flawless execution.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            {/* Image Placeholder */}
+            <div style={{ width: 140, height: 140, borderRadius: "50%", background: "rgba(229,9,20,0.05)", border: `1px solid rgba(229,9,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, fontSize: "3rem" }}>
+              👤
+            </div>
+            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
+            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Head of Sports Strategy</div>
+            <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
+              Directs tournament scheduling, sports rules alignment, and athletic experience design.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

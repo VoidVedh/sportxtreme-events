@@ -71,7 +71,8 @@ export default function Footer() {
         <div>
           <div className="bebas" style={{ fontSize: "0.85rem", letterSpacing: "0.1em", marginBottom: 18 }}>CONTACT</div>
           <div style={{ color: C.gray, fontSize: "0.8rem", lineHeight: 2 }}>
-            <a href="tel:+918975671622" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 8975671622</a>
+            <a href="tel:+918976571622" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 89765 71622</a>
+            <a href="tel:+919136890309" className="flink" style={{ display: "block", marginBottom: 0 }}>+91 91368 90309</a>
             <a href="mailto:sportxtremeevents@gmail.com" className="flink" style={{ display: "block", marginTop: 6, marginBottom: 0 }}>
               sportxtremeevents@gmail.com
             </a>

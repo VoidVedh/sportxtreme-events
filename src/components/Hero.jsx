@@ -70,7 +70,6 @@ export default function Hero() {
 
         <div className="afu d3" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           <button id="hero-explore-events" className="red-btn" onClick={() => scrollToSection("events")}>EXPLORE EVENTS →</button>
-          <button id="hero-book-event" className="out-btn" onClick={() => openModal("proposal")}>BOOK YOUR EVENT</button>
         </div>
       </div>
 

@@ -4,36 +4,13 @@ import { useModal } from "../context/ModalContext";
 import { supabase } from "../lib/supabase";
 
 export default function Contact() {
-  const [activeTab, setActiveTab] = useState("contact"); // "contact" or "proposal"
-  const { activeModal, closeModal } = useModal();
-
-  // When "proposal" modal is triggered, scroll here and switch tab
-  useEffect(() => {
-    if (activeModal === "proposal") {
-      const el = document.getElementById("contact");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      setActiveTab("proposal");
-      closeModal();
-    }
-  }, [activeModal, closeModal]);
-
   // Contact Form State
   const [contactData, setContactData] = useState({ name: "", phone: "", email: "", message: "" });
   const [contactStatus, setContactStatus] = useState({ loading: false, success: false, error: "" });
 
-  // Proposal Form State
-  const [proposalData, setProposalData] = useState({ companyName: "", eventType: "", participants: "", budget: "", description: "" });
-  const [proposalStatus, setProposalStatus] = useState({ loading: false, success: false, error: "" });
-
-  const switchTab = (tab) => {
-    setActiveTab(tab);
-    setContactStatus({ loading: false, success: false, error: "" });
-    setProposalStatus({ loading: false, success: false, error: "" });
-  };
-
   // WhatsApp click handler
   const handleWhatsApp = () => {
-    window.open("https://wa.me/918975671622", "_blank");
+    window.open("https://wa.me/918976571622", "_blank");
   };
 
   // Submit Contact Form
@@ -69,42 +46,6 @@ export default function Contact() {
 
     setContactStatus({ loading: false, success: true, error: "" });
     setContactData({ name: "", phone: "", email: "", message: "" });
-  };
-
-  // Submit Proposal Form
-  const handleProposalSubmit = async (e) => {
-    e.preventDefault();
-    setProposalStatus({ loading: true, success: false, error: "" });
-
-    // Validation
-    if (!proposalData.companyName.trim()) {
-      setProposalStatus({ loading: false, success: false, error: "Please enter your name or company name." });
-      return;
-    }
-    if (!proposalData.eventType) {
-      setProposalStatus({ loading: false, success: false, error: "Please select an event type." });
-      return;
-    }
-    if (!proposalData.description.trim()) {
-      setProposalStatus({ loading: false, success: false, error: "Please tell us about your event." });
-      return;
-    }
-
-    const { error } = await supabase.from("proposals").insert([{
-      company_name: proposalData.companyName.trim(),
-      event_type: proposalData.eventType,
-      participants: proposalData.participants.trim() || null,
-      budget: proposalData.budget.trim() || null,
-      description: proposalData.description.trim(),
-    }]);
-
-    if (error) {
-      setProposalStatus({ loading: false, success: false, error: "Failed to submit proposal. Please try again." });
-      return;
-    }
-
-    setProposalStatus({ loading: false, success: true, error: "" });
-    setProposalData({ companyName: "", eventType: "", participants: "", budget: "", description: "" });
   };
 
   return (
@@ -151,7 +92,8 @@ export default function Contact() {
                   </div>
                   {c.label === "Call Us" ? (
                     <div style={{ fontSize: "0.88rem", lineHeight: 1.6 }}>
-                      <a href="tel:+918975671622" className="flink" style={{ display: "inline-block", margin: 0 }}>+91 8975671622</a>
+                      <a href="tel:+918976571622" className="flink" style={{ display: "block", margin: "0 0 4px 0" }}>+91 89765 71622</a>
+                      <a href="tel:+919136890309" className="flink" style={{ display: "block", margin: 0 }}>+91 91368 90309</a>
                     </div>
                   ) : c.label === "Email" ? (
                     <div style={{ fontSize: "0.88rem", lineHeight: 1.6 }}>
@@ -184,164 +126,63 @@ export default function Contact() {
 
         {/* Right — form tab container */}
         <div style={{ border: "1px solid rgba(255,255,255,0.06)", padding: "40px 36px", background: "rgba(255,255,255,0.01)" }}>
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <button
-              type="button"
-              onClick={() => switchTab("contact")}
-              style={{
-                background: "none", border: "none", padding: "10px 0", cursor: "pointer",
-                color: activeTab === "contact" ? "#fff" : "rgba(255,255,255,0.4)",
-                borderBottom: activeTab === "contact" ? `2px solid ${C.red}` : "2px solid transparent",
-                fontFamily: "'Bebas Neue', cursive", fontSize: "1.1rem", letterSpacing: "0.05em",
-                transition: "all 0.3s"
-              }}
-            >
-              GENERAL INQUIRY
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("proposal")}
-              style={{
-                background: "none", border: "none", padding: "10px 0", cursor: "pointer",
-                color: activeTab === "proposal" ? "#fff" : "rgba(255,255,255,0.4)",
-                borderBottom: activeTab === "proposal" ? `2px solid ${C.red}` : "2px solid transparent",
-                fontFamily: "'Bebas Neue', cursive", fontSize: "1.1rem", letterSpacing: "0.05em",
-                transition: "all 0.3s"
-              }}
-            >
-              REQUEST A PROPOSAL
-            </button>
-          </div>
-
-          {activeTab === "contact" ? (
-            /* GENERAL INQUIRY (CONTACT FORM) */
-            <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {contactStatus.success && (
-                <div style={{ padding: "12px 16px", background: "rgba(37,211,102,0.1)", border: "1px solid #25D366", color: "#25D366", fontSize: "0.85rem" }}>
-                  Message sent successfully! We will get back to you shortly.
-                </div>
-              )}
-              {contactStatus.error && (
-                <div style={{ padding: "12px 16px", background: "rgba(229,9,20,0.1)", border: "1px solid #E50914", color: "#E50914", fontSize: "0.85rem" }}>
-                  {contactStatus.error}
-                </div>
-              )}
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <input
-                  className="form-f"
-                  placeholder="Your Name *"
-                  value={contactData.name}
-                  disabled={contactStatus.loading}
-                  onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
-                />
-                <input
-                  type="tel"
-                  className="form-f"
-                  placeholder="Your Phone"
-                  value={contactData.phone}
-                  disabled={contactStatus.loading}
-                  onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
-                />
+          <h3 className="bebas" style={{ fontSize: "1.5rem", marginBottom: 24, letterSpacing: "0.05em" }}>
+            GENERAL INQUIRY
+          </h3>
+          <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {contactStatus.success && (
+              <div style={{ padding: "12px 16px", background: "rgba(37,211,102,0.1)", border: "1px solid #25D366", color: "#25D366", fontSize: "0.85rem" }}>
+                Message sent successfully! We will get back to you shortly.
               </div>
+            )}
+            {contactStatus.error && (
+              <div style={{ padding: "12px 16px", background: "rgba(229,9,20,0.1)", border: "1px solid #E50914", color: "#E50914", fontSize: "0.85rem" }}>
+                {contactStatus.error}
+              </div>
+            )}
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <input
                 className="form-f"
-                placeholder="Your Email *"
-                type="email"
-                value={contactData.email}
+                placeholder="Your Name *"
+                value={contactData.name}
                 disabled={contactStatus.loading}
-                onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
               />
-              <textarea
+              <input
+                type="tel"
                 className="form-f"
-                placeholder="Your Message *"
-                style={{ height: 120, resize: "vertical" }}
-                value={contactData.message}
+                placeholder="Your Phone"
+                value={contactData.phone}
                 disabled={contactStatus.loading}
-                onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
+                onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
               />
-              <button
-                type="submit"
-                className="red-btn"
-                style={{ width: "100%", padding: 16 }}
-                disabled={contactStatus.loading}
-              >
-                {contactStatus.loading ? "SENDING..." : "SEND MESSAGE →"}
-              </button>
-            </form>
-          ) : (
-            /* REQUEST A PROPOSAL (PROPOSAL FORM) */
-            <form onSubmit={handleProposalSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {proposalStatus.success && (
-                <div style={{ padding: "12px 16px", background: "rgba(37,211,102,0.1)", border: "1px solid #25D366", color: "#25D366", fontSize: "0.85rem" }}>
-                  Proposal request submitted successfully!
-                </div>
-              )}
-              {proposalStatus.error && (
-                <div style={{ padding: "12px 16px", background: "rgba(229,9,20,0.1)", border: "1px solid #E50914", color: "#E50914", fontSize: "0.85rem" }}>
-                  {proposalStatus.error}
-                </div>
-              )}
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <input
-                  className="form-f"
-                  placeholder="Your Name / Company Name *"
-                  value={proposalData.companyName}
-                  disabled={proposalStatus.loading}
-                  onChange={(e) => setProposalData({ ...proposalData, companyName: e.target.value })}
-                />
-                <select
-                  className="form-f"
-                  value={proposalData.eventType}
-                  disabled={proposalStatus.loading}
-                  onChange={(e) => setProposalData({ ...proposalData, eventType: e.target.value })}
-                >
-                  <option value="">Event Type *</option>
-                  <option value="Corporate Sports League">Corporate Sports League</option>
-                  <option value="School Championship">School Championship</option>
-                  <option value="Marathon / Mass Event">Marathon / Mass Event</option>
-                  <option value="Tournament Management">Tournament Management</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <input
-                  type="number"
-                  className="form-f"
-                  placeholder="Expected Number of Participants"
-                  value={proposalData.participants}
-                  disabled={proposalStatus.loading}
-                  onChange={(e) => setProposalData({ ...proposalData, participants: e.target.value })}
-                />
-                <input
-                  type="number"
-                  className="form-f"
-                  placeholder="Expected Budget"
-                  value={proposalData.budget}
-                  disabled={proposalStatus.loading}
-                  onChange={(e) => setProposalData({ ...proposalData, budget: e.target.value })}
-                />
-              </div>
-              <textarea
-                className="form-f"
-                placeholder="Tell us about your event (requirements, sport preference, dates, etc.) *"
-                style={{ height: 120, resize: "vertical" }}
-                value={proposalData.description}
-                disabled={proposalStatus.loading}
-                onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
-              />
-              <button
-                type="submit"
-                className="red-btn"
-                style={{ width: "100%", padding: 16 }}
-                disabled={proposalStatus.loading}
-              >
-                {proposalStatus.loading ? "SUBMITTING..." : "SEND PROPOSAL REQUEST →"}
-              </button>
-            </form>
-          )}
+            </div>
+            <input
+              className="form-f"
+              placeholder="Your Email *"
+              type="email"
+              value={contactData.email}
+              disabled={contactStatus.loading}
+              onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+            />
+            <textarea
+              className="form-f"
+              placeholder="Your Message *"
+              style={{ height: 120, resize: "vertical" }}
+              value={contactData.message}
+              disabled={contactStatus.loading}
+              onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
+            />
+            <button
+              type="submit"
+              className="red-btn"
+              style={{ width: "100%", padding: 16 }}
+              disabled={contactStatus.loading}
+            >
+              {contactStatus.loading ? "SENDING..." : "SEND MESSAGE →"}
+            </button>
+          </form>
         </div>
       </div>
     </section>
