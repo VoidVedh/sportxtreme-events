@@ -141,12 +141,12 @@ export default function About() {
           <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             {/* Co-Founder Photo */}
             <div style={{ width: 140, height: 140, borderRadius: "50%", overflow: "hidden", border: `1px solid rgba(229,9,20,0.2)`, marginBottom: 20 }}>
-              <img src="/co-founder-1.jpg" alt="Co-Founder" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src="/Ganesh Kamath Co-Founder.jpg" alt="Ganesh Kamath" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
-            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Director of Operations</div>
+            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Ganesh Kamath</h4>
+            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder</div>
             <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
-              Oversees event logistics, planning, and partner relations to ensure flawless execution.
+              Co-Founder & Director of Operations. Oversees event logistics, planning, and partner relations to ensure flawless execution.
             </p>
           </div>
 
@@ -154,12 +154,12 @@ export default function About() {
           <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             {/* Co-Founder Photo */}
             <div style={{ width: 140, height: 140, borderRadius: "50%", overflow: "hidden", border: `1px solid rgba(229,9,20,0.2)`, marginBottom: 20 }}>
-              <img src="/co-founder-2.jpg" alt="Co-Founder" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src="/Harsh Pawar Co-Founder.jpg" alt="Harsh Pawar" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
-            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Head of Sports Strategy</div>
+            <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Harsh Pawar</h4>
+            <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder</div>
             <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
-              Directs tournament scheduling, sports rules alignment, and athletic experience design.
+              Co-Founder & Head of Sports Strategy. Directs tournament scheduling, sports rules alignment, and athletic experience design.
             </p>
           </div>
         </div>
