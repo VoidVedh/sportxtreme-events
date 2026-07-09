@@ -139,9 +139,9 @@ export default function About() {
         <div className="g2" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 32, maxWidth: 800, margin: "0 auto" }}>
           {/* Card 1 */}
           <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            {/* Image Placeholder */}
-            <div style={{ width: 140, height: 140, borderRadius: "50%", background: "rgba(229,9,20,0.05)", border: `1px solid rgba(229,9,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, fontSize: "3rem" }}>
-              👤
+            {/* Co-Founder Photo */}
+            <div style={{ width: 140, height: 140, borderRadius: "50%", overflow: "hidden", border: `1px solid rgba(229,9,20,0.2)`, marginBottom: 20 }}>
+              <img src="/co-founder-1.jpg" alt="Co-Founder" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
             <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Director of Operations</div>
@@ -152,9 +152,9 @@ export default function About() {
 
           {/* Card 2 */}
           <div className="card-lift" style={{ border: "1px solid rgba(255,255,255,0.06)", background: C.black, padding: 32, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            {/* Image Placeholder */}
-            <div style={{ width: 140, height: 140, borderRadius: "50%", background: "rgba(229,9,20,0.05)", border: `1px solid rgba(229,9,20,0.2)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, fontSize: "3rem" }}>
-              👤
+            {/* Co-Founder Photo */}
+            <div style={{ width: 140, height: 140, borderRadius: "50%", overflow: "hidden", border: `1px solid rgba(229,9,20,0.2)`, marginBottom: 20 }}>
+              <img src="/co-founder-2.jpg" alt="Co-Founder" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Co-Founder</h4>
             <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder & Head of Sports Strategy</div>
