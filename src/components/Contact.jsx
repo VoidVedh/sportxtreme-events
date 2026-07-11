@@ -10,7 +10,7 @@ export default function Contact() {
 
   // WhatsApp click handler
   const handleWhatsApp = () => {
-    window.open("https://wa.me/918976571622", "_blank");
+    window.open("https://wa.me/919136890309", "_blank");
   };
 
   // Submit Contact Form

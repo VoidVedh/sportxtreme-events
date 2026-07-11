@@ -3,7 +3,7 @@ import { C } from "../data/content";
 import { scrollToSection } from "../lib/scroll";
 
 const FOOTER_SERVICES = ["Tournament Management","Corporate Leagues","School Championships","Marathon Events","Sports Marketing","Venue Management"];
-const FOOTER_SPORTS   = ["Cricket","Football","Basketball","Swimming","Marathon","Badminton","Cyclothon"];
+const FOOTER_SPORTS   = ["Cricket", "Football", "Badminton", "Table Tennis", "Chess", "Carrom", "Squash", "Swimming", "Team Events", "Marathon"];
 const LEGAL_LINKS     = ["Privacy Policy","Terms of Service","Cookie Policy"];
 
 export default function Footer() {

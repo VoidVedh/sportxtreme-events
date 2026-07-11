@@ -8,7 +8,7 @@ const CORNER_POSITIONS = [
   { bottom: -1, right: -1 },
 ];
 
-const ABOUT_SPORTS = ["Cricket","Football","Marathon","Swimming","Badminton","Basketball","Cyclothon","& More…"];
+const ABOUT_SPORTS = ["Cricket", "Football", "Badminton", "Table Tennis", "Chess", "Carrom", "Squash", "Swimming", "Team Events", "Marathon"];
 
 const VM_ITEMS = [
   { label: "OUR VISION", text: "A professional sports event company delivering premium experiences that inspire excellence and community engagement.", accent: true  },
@@ -98,7 +98,7 @@ export default function About() {
             <div className="bebas" style={{ fontSize: "5.5rem", color: C.red, lineHeight: 1, opacity: 0.5, marginBottom: 18 }}>SX</div>
             <div className="bebas" style={{ fontSize: "1.3rem", marginBottom: 12 }}>SPORTXTREME EVENTS</div>
             <div style={{ color: C.gray, fontSize: "0.82rem", marginBottom: 28, lineHeight: 1.6 }}>
-              Where Every Game Becomes a Grand Event
+              All sports according to your requirements.
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 24px" }}>
@@ -146,7 +146,7 @@ export default function About() {
             <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Ganesh Kamath</h4>
             <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder</div>
             <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
-              Co-Founder & Director of Operations. Oversees event logistics, planning, and partner relations to ensure flawless execution.
+              Leveraging years of competitive badminton experience to orchestrate world-class sporting events.
             </p>
           </div>
 
@@ -159,7 +159,7 @@ export default function About() {
             <h4 className="bebas" style={{ fontSize: "1.4rem", letterSpacing: "0.03em", marginBottom: 4 }}>Harsh Pawar</h4>
             <div style={{ fontSize: "0.75rem", color: C.red, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12, fontWeight: "bold" }}>Co-Founder</div>
             <p style={{ color: C.gray, fontSize: "0.82rem", lineHeight: 1.6 }}>
-              Co-Founder & Head of Sports Strategy. Directs tournament scheduling, sports rules alignment, and athletic experience design.
+              Fusing years of professional cricket experience with a degree in Sports Management to architect the next generation of world-class sporting events.
             </p>
           </div>
         </div>
