@@ -24,6 +24,12 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
 
+    if (email.length > 100 || password.length > 100) {
+      setError("Credentials must be under 100 characters.");
+      setLoading(false);
+      return;
+    }
+
     const result = await login(email, password);
     
     if (result.success) {

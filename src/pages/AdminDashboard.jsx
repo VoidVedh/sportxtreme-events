@@ -161,6 +161,31 @@ export default function AdminDashboard() {
     setScanResult({ success: null, message: "" });
     try {
       const trimmedId = ticketId.trim();
+
+      // 1. Try server-side verified check-in RPC
+      try {
+        const { data: rpcData, error: rpcErr } = await supabase
+          .rpc("verify_and_checkin_participant", { p_ticket_identifier: trimmedId });
+
+        if (!rpcErr && rpcData && rpcData.length > 0) {
+          const res = rpcData[0];
+          setScanResult({
+            success: res.success,
+            message: res.success
+              ? `Check-In Successful! Athlete: ${res.participant_name} | Event: ${res.event_title || ""} (${res.registration_number})`
+              : res.message,
+          });
+          if (res.success) {
+            setManualTicketId("");
+            fetchData();
+          }
+          setScannerLoading(false);
+          return;
+        }
+      } catch (rpcFallbackErr) {
+        // Fallback to direct table check if RPC not yet deployed
+      }
+
       const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(trimmedId);
 
       let query = supabase.from("registrations").select("*");
@@ -241,19 +266,29 @@ export default function AdminDashboard() {
       alert("No registration records to export.");
       return;
     }
+
+    const escapeCsvCell = (val) => {
+      if (val === null || val === undefined) return "";
+      const str = val.toString();
+      if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@")) {
+        return `'${str}`;
+      }
+      return str;
+    };
+
     const headers = ["Registration Number", "Name", "Email", "Phone", "Age", "T-Shirt Size", "Status", "Created At"];
     const rows = registrations.map(r => [
-      r.registration_number,
-      r.name,
-      r.email,
-      r.phone,
-      r.age || "—",
-      r.tshirt_size || "—",
-      r.status,
-      new Date(r.created_at).toLocaleDateString()
+      escapeCsvCell(r.registration_number),
+      escapeCsvCell(r.name),
+      escapeCsvCell(r.email),
+      escapeCsvCell(r.phone),
+      escapeCsvCell(r.age || "—"),
+      escapeCsvCell(r.tshirt_size || "—"),
+      escapeCsvCell(r.status),
+      escapeCsvCell(new Date(r.created_at).toLocaleDateString())
     ]);
     const csvContent = "data:text/csv;charset=utf-8,"
-      + [headers.join(","), ...rows.map(e => e.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(","))].join("\n");
+      + [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -319,16 +354,86 @@ export default function AdminDashboard() {
   const handleSaveEvent = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+
+    const title = formData.get("title")?.trim();
+    const category = formData.get("category")?.trim();
+    const sport = formData.get("sport")?.trim();
+    const description = formData.get("description")?.trim();
+    const location = formData.get("location")?.trim();
+    const participants = formData.get("participants")?.trim();
+    const event_date = formData.get("event_date") || null;
+    const status = formData.get("status") || "upcoming";
+    const image_url = formData.get("image_url")?.trim() || null;
+
+    // Validations
+    if (!title) {
+      alert("Event title is required.");
+      return;
+    }
+    if (title.length > 150) {
+      alert("Event title must be under 150 characters.");
+      return;
+    }
+
+    if (!category) {
+      alert("Category is required.");
+      return;
+    }
+    if (category.length > 50) {
+      alert("Category must be under 50 characters.");
+      return;
+    }
+
+    if (!sport) {
+      alert("Sport is required.");
+      return;
+    }
+    if (sport.length > 50) {
+      alert("Sport must be under 50 characters.");
+      return;
+    }
+
+    if (description && description.length > 1000) {
+      alert("Description must be under 1000 characters.");
+      return;
+    }
+
+    if (location && location.length > 200) {
+      alert("Location must be under 200 characters.");
+      return;
+    }
+
+    if (participants && participants.length > 50) {
+      alert("Participants description must be under 50 characters.");
+      return;
+    }
+
+    if (!["upcoming", "ongoing", "completed", "cancelled"].includes(status)) {
+      alert("Invalid status selected.");
+      return;
+    }
+
+    if (image_url) {
+      if (image_url.length > 1000) {
+        alert("Image URL must be under 1000 characters.");
+        return;
+      }
+      if (!/^https?:\/\/.+/.test(image_url)) {
+        alert("Image URL must start with http:// or https://");
+        return;
+      }
+    }
+
     const eventPayload = {
-      title: formData.get("title"),
-      category: formData.get("category"),
-      sport: formData.get("sport"),
-      description: formData.get("description"),
-      location: formData.get("location"),
-      participants: formData.get("participants"),
-      event_date: formData.get("event_date") || null,
-      status: formData.get("status") || "upcoming",
-      image_url: formData.get("image_url") || null,
+      title,
+      category,
+      sport,
+      description,
+      location,
+      participants,
+      event_date,
+      status,
+      image_url,
     };
 
     const regDeadline = formData.get("registration_deadline");
@@ -337,7 +442,12 @@ export default function AdminDashboard() {
     }
     const maxPart = formData.get("max_participants");
     if (maxPart) {
-      eventPayload.max_participants = parseInt(maxPart, 10);
+      const parsedMaxPart = parseInt(maxPart, 10);
+      if (isNaN(parsedMaxPart) || parsedMaxPart <= 0) {
+        alert("Maximum participants must be a positive integer.");
+        return;
+      }
+      eventPayload.max_participants = parsedMaxPart;
     }
 
     if (editingEvent) {
@@ -397,8 +507,26 @@ export default function AdminDashboard() {
     let file = e.target.files?.[0];
     if (!file) return;
 
+    // Strict file extension and MIME type validation
+    const allowedExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+    const fileExt = file.name.split(".").pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExt)) {
+      alert("Unsupported file extension. Only JPG, JPEG, PNG, WEBP, and GIF files are allowed.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert("Unsupported file type. Only JPG, JPEG, PNG, WEBP, and GIF images are allowed.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     if (file.size > 5242880) {
       alert("File size exceeds 5MB limit.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -413,7 +541,7 @@ export default function AdminDashboard() {
       if (file.type !== "image/gif") {
         try {
           console.log("[GalleryUpload] Compressing image and converting to WebP...");
-          file = await compressImageToWebP(file, 0.8, 1920);
+          file = await compressImageToWebP(file);
           console.log("[GalleryUpload] Compressed file name  :", file.name);
           console.log("[GalleryUpload] Compressed file size  :", file.size, "bytes");
           console.log("[GalleryUpload] Compressed file type  :", file.type);

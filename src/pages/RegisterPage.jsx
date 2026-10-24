@@ -28,6 +28,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
   const [tshirtSize, setTshirtSize] = useState("M");
+  const [honeypot, setHoneypot] = useState("");
 
   const [status, setStatus] = useState({ loading: false, success: false, error: "" });
   const [ticket, setTicket] = useState(null);
@@ -39,7 +40,7 @@ export default function RegisterPage() {
       try {
         const { data, error } = await supabase
           .from("events")
-          .select("*")
+          .select("id, title, category, sport, description, location, participants, event_date, image_url, status")
           .order("event_date", { ascending: false });
 
         if (!active) return;
@@ -137,6 +138,12 @@ export default function RegisterPage() {
       return;
     }
 
+    if (honeypot) {
+      // Bot trapped in honeypot
+      setStatus({ loading: false, success: true, error: "" });
+      return;
+    }
+
     try {
       // 1. Try secure RPC first
       let regResult = null;
@@ -155,27 +162,54 @@ export default function RegisterPage() {
         if (rpcError) throw rpcError;
         regResult = data;
       } catch (rpcErr) {
-        // Fallback to direct table insert if RPC not applied yet
-        console.warn("RPC registration attempt note:", rpcErr.message || rpcErr);
-        const { data: insertData, error: insertError } = await supabase
-          .from("registrations")
-          .insert([
-            {
-              event_id: selectedEventId,
-              name: cleanName,
-              email: cleanEmail,
-              phone: cleanPhone,
-              age: parsedAge,
-              tshirt_size: tshirtSize,
-              status: "pending",
-              qr_payload: { name: cleanName, email: cleanEmail, phone: cleanPhone },
-            },
-          ])
-          .select("id, registration_number, created_at")
-          .single();
+        const msg = rpcErr.message || "";
+        if (msg.includes("DUPLICATE_REGISTRATION") || msg.includes("already registered")) {
+          throw new Error("You are already registered for this event with this email address or phone number.");
+        }
+        if (msg.includes("EVENT_CLOSED") || msg.includes("deadline")) {
+          throw new Error("Registration for this event has closed.");
+        }
+        if (msg.includes("EVENT_FULL") || msg.includes("maximum participant")) {
+          throw new Error("Registration is full. Maximum participant capacity reached.");
+        }
+        if (msg.includes("INVALID_INPUT")) {
+          throw new Error(msg.replace("INVALID_INPUT:", "").trim());
+        }
 
-        if (insertError) throw insertError;
-        regResult = insertData;
+        // If RPC function does not exist in schema cache, fallback to direct insert
+        if (
+          msg.includes("Could not find the function") ||
+          msg.includes("schema cache") ||
+          msg.includes("does not exist")
+        ) {
+          console.warn("RPC not found on database, using direct insert fallback");
+          const { data: insertData, error: insertError } = await supabase
+            .from("registrations")
+            .insert([
+              {
+                event_id: selectedEventId,
+                name: cleanName,
+                email: cleanEmail,
+                phone: cleanPhone,
+                age: parsedAge,
+                tshirt_size: tshirtSize,
+                status: "pending",
+                qr_payload: { name: cleanName, email: cleanEmail, phone: cleanPhone },
+              },
+            ])
+            .select("id, registration_number, created_at")
+            .single();
+
+          if (insertError) {
+            if (insertError.code === "23505" || insertError.message?.includes("unique")) {
+              throw new Error("You are already registered for this event with this email address.");
+            }
+            throw insertError;
+          }
+          regResult = insertData;
+        } else {
+          throw rpcErr;
+        }
       }
 
       setTicket({

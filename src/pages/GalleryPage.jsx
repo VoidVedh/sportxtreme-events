@@ -54,7 +54,10 @@ export default function GalleryPage() {
           setTimeout(() => reject(new Error("Request timed out")), 4000)
         );
         const { data, error } = await Promise.race([
-          supabase.from("gallery").select("*").order("created_at", { ascending: false }),
+          supabase
+            .from("gallery")
+            .select("id, url, caption, category, event_name, created_at")
+            .order("created_at", { ascending: false }),
           timeoutPromise,
         ]);
 

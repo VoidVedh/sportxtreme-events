@@ -18,25 +18,55 @@ export default function Contact() {
     e.preventDefault();
     setContactStatus({ loading: true, success: false, error: "" });
 
+    const cleanName = contactData.name.trim();
+    const cleanEmail = contactData.email.trim();
+    const cleanPhone = contactData.phone.trim();
+    const cleanMessage = contactData.message.trim();
+
     // Validation
-    if (!contactData.name.trim()) {
+    if (!cleanName) {
       setContactStatus({ loading: false, success: false, error: "Please enter your name." });
       return;
     }
-    if (!contactData.email.trim() || !/\S+@\S+\.\S+/.test(contactData.email)) {
+    if (cleanName.length > 100) {
+      setContactStatus({ loading: false, success: false, error: "Name must be under 100 characters." });
+      return;
+    }
+
+    if (!cleanEmail || !/^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/.test(cleanEmail)) {
       setContactStatus({ loading: false, success: false, error: "Please enter a valid email address." });
       return;
     }
-    if (!contactData.message.trim()) {
+    if (cleanEmail.length > 100) {
+      setContactStatus({ loading: false, success: false, error: "Email must be under 100 characters." });
+      return;
+    }
+
+    if (cleanPhone) {
+      if (cleanPhone.length > 20) {
+        setContactStatus({ loading: false, success: false, error: "Phone number must be under 20 characters." });
+        return;
+      }
+      if (!/^[+0-9\s\-()]+$/.test(cleanPhone)) {
+        setContactStatus({ loading: false, success: false, error: "Invalid phone number format." });
+        return;
+      }
+    }
+
+    if (!cleanMessage) {
       setContactStatus({ loading: false, success: false, error: "Please enter your message." });
+      return;
+    }
+    if (cleanMessage.length > 1000) {
+      setContactStatus({ loading: false, success: false, error: "Message must be under 1000 characters." });
       return;
     }
 
     const { error } = await supabase.from("contacts").insert([{
-      name: contactData.name.trim(),
-      phone: contactData.phone.trim() || null,
-      email: contactData.email.trim(),
-      message: contactData.message.trim(),
+      name: cleanName,
+      phone: cleanPhone || null,
+      email: cleanEmail,
+      message: cleanMessage,
     }]);
 
     if (error) {

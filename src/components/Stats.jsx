@@ -25,18 +25,16 @@ export default function Stats() {
           ? new Set(eventsData.map((e) => e.sport).filter(Boolean)).size
           : 0;
 
-        // Fetch registrations count
-        // Note: we swallow error if registrations table does not exist yet (displays 0)
+        // Fetch registrations count securely via RPC
         let registrationsCount = 0;
         try {
-          const { count, error: regError } = await supabase
-            .from("registrations")
-            .select("id", { count: "exact", head: true });
-          if (!regError && count !== null) {
-            registrationsCount = count;
+          const { data, error: regError } = await supabase
+            .rpc("get_total_participants");
+          if (!regError && data !== null) {
+            registrationsCount = data;
           }
         } catch (e) {
-          console.error("Error fetching registrations:", e);
+          console.error("Error fetching registrations count:", e);
         }
 
         // Fetch gallery count

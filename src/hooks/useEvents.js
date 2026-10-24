@@ -19,7 +19,7 @@ export function useEvents({ limit = null } = {}) {
       try {
         let query = supabase
           .from("events")
-          .select("*")
+          .select("id, title, category, sport, description, location, participants, event_date, image_url, status, created_at")
           .order("created_at", { ascending: false });
 
         if (limit) query = query.limit(limit);
