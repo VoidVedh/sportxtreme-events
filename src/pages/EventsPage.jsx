@@ -17,7 +17,7 @@ export default function EventsPage() {
     canonical: "https://sportxtreme.com/events",
   });
 
-  const { events, loading, error } = useEvents();
+  const { events, loading, error, refetch } = useEvents();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
@@ -200,9 +200,9 @@ export default function EventsPage() {
                 <button
                   type="button"
                   className="sx-btn-secondary"
-                  onClick={() => window.location.reload()}
+                  onClick={refetch}
                 >
-                  Retry Loading
+                  Retry Loading ↻
                 </button>
               </div>
             )}

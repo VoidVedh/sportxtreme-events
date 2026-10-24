@@ -8,6 +8,9 @@ export function useEvents({ limit = null } = {}) {
   const [events, setEvents]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const refetch = () => setReloadKey((prev) => prev + 1);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +48,7 @@ export function useEvents({ limit = null } = {}) {
 
     fetchEvents();
     return () => { cancelled = true; };
-  }, [limit]);
+  }, [limit, reloadKey]);
 
-  return { events, loading, error };
+  return { events, loading, error, refetch };
 }

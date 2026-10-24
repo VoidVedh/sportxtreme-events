@@ -478,27 +478,49 @@ export default function AdminDashboard() {
 
 
 
-  const compressImageToWebP = async (file) => {
+  const compressImageVersions = async (file) => {
     if (file.type === "image/gif") {
-      return file;
+      return { fullFile: file, thumbFile: file };
     }
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
+    const lastDot = file.name.lastIndexOf(".");
+    const nameWithoutExt = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
+
+    // Full version: max width/height 1600px, target <= 200 kB
+    const fullOptions = {
+      maxSizeMB: 0.2,
+      maxWidthOrHeight: 1600,
       useWebWorker: true,
-      fileType: "image/webp"
+      fileType: "image/webp",
     };
+
+    // Thumbnail version: max width/height 600px, target <= 120 kB
+    const thumbOptions = {
+      maxSizeMB: 0.12,
+      maxWidthOrHeight: 600,
+      useWebWorker: true,
+      fileType: "image/webp",
+    };
+
     try {
-      const compressedBlob = await imageCompression(file, options);
-      const lastDot = file.name.lastIndexOf(".");
-      const nameWithoutExt = lastDot !== -1 ? file.name.substring(0, lastDot) : file.name;
-      return new File([compressedBlob], `${nameWithoutExt}.webp`, {
+      const [fullBlob, thumbBlob] = await Promise.all([
+        imageCompression(file, fullOptions),
+        imageCompression(file, thumbOptions),
+      ]);
+
+      const fullFile = new File([fullBlob], `${nameWithoutExt}-full.webp`, {
         type: "image/webp",
         lastModified: Date.now(),
       });
+
+      const thumbFile = new File([thumbBlob], `${nameWithoutExt}-thumb.webp`, {
+        type: "image/webp",
+        lastModified: Date.now(),
+      });
+
+      return { fullFile, thumbFile };
     } catch (error) {
-      console.error("Compression failed, using original file:", error);
-      return file;
+      console.warn("[GalleryUpload] Dual-version compression fallback to single file:", error);
+      return { fullFile: file, thumbFile: file };
     }
   };
 
@@ -531,64 +553,51 @@ export default function AdminDashboard() {
     }
 
     setUploadingImage(true);
-    console.group("[GalleryUpload] ── STARTING UPLOAD ──");
-    console.log("[GalleryUpload] Original file name    :", file.name);
-    console.log("[GalleryUpload] Original file size    :", file.size, "bytes");
-    console.log("[GalleryUpload] Original file type    :", file.type);
 
     try {
-      // Compress and convert to WebP (skip for gifs)
-      if (file.type !== "image/gif") {
-        try {
-          console.log("[GalleryUpload] Compressing image and converting to WebP...");
-          file = await compressImageToWebP(file);
-          console.log("[GalleryUpload] Compressed file name  :", file.name);
-          console.log("[GalleryUpload] Compressed file size  :", file.size, "bytes");
-          console.log("[GalleryUpload] Compressed file type  :", file.type);
-        } catch (compressErr) {
-          console.warn("[GalleryUpload] Compression failed, uploading original:", compressErr.message);
-        }
+      const { fullFile, thumbFile } = await compressImageVersions(file);
+      const randomPrefix = Math.random().toString(36).substring(2);
+      const timestamp = Date.now();
+      const filePathFull = `gallery/${randomPrefix}-${timestamp}-full.webp`;
+      const filePathThumb = `gallery/${randomPrefix}-${timestamp}-thumb.webp`;
+
+      // Upload both full and thumbnail to storage
+      const [uploadFullRes, uploadThumbRes] = await Promise.all([
+        supabase.storage.from("gallery").upload(filePathFull, fullFile),
+        supabase.storage.from("gallery").upload(filePathThumb, thumbFile),
+      ]);
+
+      if (uploadFullRes.error) {
+        throw uploadFullRes.error;
       }
 
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `gallery/${fileName}`;
-
-      console.log("[GalleryUpload] storage_path will be:", filePath);
-      console.log("[GalleryUpload] Calling: supabase.storage.from('gallery').upload('" + filePath + "', file)");
-
-      const { data: storageUpData, error: uploadError } = await supabase.storage
+      const { data: { publicUrl: fullPublicUrl } } = supabase.storage
         .from("gallery")
-        .upload(filePath, file);
+        .getPublicUrl(filePathFull);
 
-      console.log("[GalleryUpload] Storage upload raw response:", JSON.parse(JSON.stringify({ data: storageUpData, error: uploadError })));
-
-      if (uploadError) {
-        console.error("[GalleryUpload] ❌ STORAGE UPLOAD FAILED");
-        console.error("[GalleryUpload] error.message   :", uploadError.message);
-        console.error("[GalleryUpload] error.statusCode:", uploadError.statusCode);
-        console.error("[GalleryUpload] error (full)    :", uploadError);
-        throw uploadError;
+      let thumbPublicUrl = fullPublicUrl;
+      if (!uploadThumbRes.error) {
+        const { data: { publicUrl: tUrl } } = supabase.storage
+          .from("gallery")
+          .getPublicUrl(filePathThumb);
+        thumbPublicUrl = tUrl;
       }
-
-      console.log("[GalleryUpload] ✅ Storage upload succeeded:", storageUpData);
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("gallery")
-        .getPublicUrl(filePath);
-
-      console.log("[GalleryUpload] publicUrl:", publicUrl);
 
       const insertPayload = {
-        url: publicUrl,
+        url: fullPublicUrl,
+        thumbnail_url: thumbPublicUrl,
         caption: uploadCaption.trim() || "Untitled Image",
         category: uploadCategory,
         event_name: uploadEventName.trim() || null,
-        storage_path: filePath,
+        storage_path: filePathFull,
       };
-      console.log("[GalleryUpload] DB insert payload:", JSON.parse(JSON.stringify(insertPayload)));
 
-      const insertResult = await supabase.from("gallery").insert([insertPayload]).select("*");
+      let insertResult = await supabase.from("gallery").insert([insertPayload]).select("*");
+      if (insertResult.error && insertResult.error.message?.includes("thumbnail_url")) {
+        // Fallback if migration 013 not applied to DB yet
+        delete insertPayload.thumbnail_url;
+        insertResult = await supabase.from("gallery").insert([insertPayload]).select("*");
+      }
 
       console.log("[GalleryUpload] DB insert raw response:", JSON.parse(JSON.stringify(insertResult)));
       console.log("[GalleryUpload] DB data    :", insertResult.data);
