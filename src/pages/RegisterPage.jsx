@@ -39,7 +39,7 @@ export default function RegisterPage() {
       try {
         const { data, error } = await supabase
           .from("events")
-          .select("id, title, sport, category, event_date, location, registration_deadline, max_participants, status")
+          .select("*")
           .order("event_date", { ascending: false });
 
         if (!active) return;
