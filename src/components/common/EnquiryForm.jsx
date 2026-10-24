@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { SITE_CONFIG } from "../../config/siteContent";
 
 export default function EnquiryForm() {
   const [formData, setFormData] = useState({

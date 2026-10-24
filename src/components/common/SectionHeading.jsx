@@ -56,7 +56,7 @@ export default function SectionHeading({
             <span style={{ color: "var(--sx-red)" }}>{accentTitle}</span>
           </>
         )}
-      </h2>
+      </HeadingTag>
 
       {description && (
         <p

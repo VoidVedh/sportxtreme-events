@@ -15,12 +15,14 @@ export default function Testimonials() {
           .select("*")
           .order("created_at", { ascending: false });
         if (cancelled) return;
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           setTestimonials(data);
           setCurrentIndex(0);
+        } else {
+          setTestimonials(STATIC_TESTIMONIALS || []);
         }
       } catch {
-        setTestimonials([]);
+        setTestimonials(STATIC_TESTIMONIALS || []);
       }
     }
     fetchTestimonials();

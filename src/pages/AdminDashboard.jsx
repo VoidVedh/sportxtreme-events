@@ -125,37 +125,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // ── QR SCANNER LOGIC ──
-  useEffect(() => {
-    if (activeTab !== "registrations" || !showScanner) return;
-
-    let scanner;
-    const startScanner = () => {
-      scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
-      scanner.render(
-        async (decodedText) => {
-          if (decodedText) {
-            scanner.clear().catch(err => console.error("Error clearing scanner on hit:", err));
-            await handleCheckInTicket(decodedText);
-          }
-        },
-        (error) => {
-          // Continuous search throws minor exceptions, safely ignore
-        }
-      );
-    };
-
-    // Delay instantiation slightly to ensure DOM element is loaded
-    const timer = setTimeout(startScanner, 100);
-
-    return () => {
-      clearTimeout(timer);
-      if (scanner) {
-        scanner.clear().catch(err => console.error("Failed to clear scanner on unmount:", err));
-      }
-    };
-  }, [activeTab, showScanner]);
-
   const handleCheckInTicket = async (ticketId) => {
     setScannerLoading(true);
     setScanResult({ success: null, message: "" });
@@ -183,7 +152,7 @@ export default function AdminDashboard() {
           return;
         }
       } catch (rpcFallbackErr) {
-        // Fallback to direct table check if RPC not yet deployed
+        console.warn("RPC check-in notice, falling back:", rpcFallbackErr.message || rpcFallbackErr);
       }
 
       const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(trimmedId);
@@ -240,6 +209,44 @@ export default function AdminDashboard() {
       setScannerLoading(false);
     }
   };
+
+  const checkInRef = useRef(handleCheckInTicket);
+  useEffect(() => {
+    checkInRef.current = handleCheckInTicket;
+  });
+
+  // ── QR SCANNER LOGIC ──
+  useEffect(() => {
+    if (activeTab !== "registrations" || !showScanner) return;
+
+    let scanner;
+    const startScanner = () => {
+      scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }, false);
+      scanner.render(
+        async (decodedText) => {
+          if (decodedText) {
+            scanner.clear().catch(err => console.error("Error clearing scanner on hit:", err));
+            if (checkInRef.current) {
+              await checkInRef.current(decodedText);
+            }
+          }
+        },
+        (_error) => {
+          // Continuous search throws minor exceptions, safely ignore
+        }
+      );
+    };
+
+    // Delay instantiation slightly to ensure DOM element is loaded
+    const timer = setTimeout(startScanner, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (scanner) {
+        scanner.clear().catch(err => console.error("Failed to clear scanner on unmount:", err));
+      }
+    };
+  }, [activeTab, showScanner]);
 
   const handleUpdateRegStatus = async (id, newStatus) => {
     try {
@@ -621,9 +628,9 @@ export default function AdminDashboard() {
       console.log("[GalleryUpload] Saved event_name  :", savedRow?.event_name);
       console.log("[GalleryUpload] Saved id          :", savedRow?.id);
 
-      if (savedRow?.storage_path !== filePath) {
+      if (savedRow?.storage_path !== filePathFull) {
         console.error("[GalleryUpload] ⚠️ storage_path MISMATCH or NULL in saved row!");
-        console.error("[GalleryUpload] Expected:", filePath);
+        console.error("[GalleryUpload] Expected:", filePathFull);
         console.error("[GalleryUpload] Got     :", savedRow?.storage_path);
       }
 
@@ -825,7 +832,6 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setActiveTab(tab.id);
                   setShowEventForm(false);
-                  setShowTestimonialForm(false);
                   setShowScanner(false);
                   setScanResult({ success: null, message: "" });
                 }}

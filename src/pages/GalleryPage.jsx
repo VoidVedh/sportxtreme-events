@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { supabase } from "../lib/supabase";
@@ -110,11 +110,14 @@ export default function GalleryPage() {
     ? filteredItems.findIndex((it) => it.id === activeModalItem.id)
     : -1;
 
-  const navigateModal = (direction) => {
-    if (currentModalIndex === -1 || filteredItems.length <= 1) return;
-    const newIndex = (currentModalIndex + direction + filteredItems.length) % filteredItems.length;
-    setActiveModalItem(filteredItems[newIndex]);
-  };
+  const navigateModal = useCallback(
+    (direction) => {
+      if (currentModalIndex === -1 || filteredItems.length <= 1) return;
+      const newIndex = (currentModalIndex + direction + filteredItems.length) % filteredItems.length;
+      setActiveModalItem(filteredItems[newIndex]);
+    },
+    [currentModalIndex, filteredItems]
+  );
 
   // Modal ESC & Arrow key listener & body scroll lock
   useEffect(() => {
@@ -159,7 +162,7 @@ export default function GalleryPage() {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeModalItem, currentModalIndex, filteredItems]);
+  }, [activeModalItem, navigateModal]);
 
   // Extract distinct categories from actual gallery data
   const categories = [

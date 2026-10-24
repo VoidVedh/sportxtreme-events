@@ -504,6 +504,20 @@ export default function RegisterPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit}>
+                    {/* Bot detection honeypot field (hidden from real users) */}
+                    <div style={{ display: "none" }} aria-hidden="true">
+                      <label htmlFor="reg-honeypot">Leave blank</label>
+                      <input
+                        id="reg-honeypot"
+                        name="reg_hp"
+                        type="text"
+                        tabIndex="-1"
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                      />
+                    </div>
+
                     {/* Event Select Dropdown */}
                     <div className="sx-field">
                       <label htmlFor="reg-event-select" className="sx-label">

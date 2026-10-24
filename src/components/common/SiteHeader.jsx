@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SITE_CONFIG } from "../../config/siteContent";
 import SafeImage from "./SafeImage";
 
@@ -7,7 +7,6 @@ export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
   const drawerRef = useRef(null);
   const menuButtonRef = useRef(null);
 

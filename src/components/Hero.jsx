@@ -1,11 +1,9 @@
 import { C } from "../data/content";
-import { useModal } from "../context/ModalContext";
 import { scrollToSection } from "../lib/scroll";
 
 const SPEED_LINE_POSITIONS = [12, 27, 42, 57, 72];
 
 export default function Hero() {
-  const { openModal } = useModal();
 
   return (
     <section

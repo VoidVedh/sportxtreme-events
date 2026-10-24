@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CONTACT_INFO, C } from "../data/content";
-import { useModal } from "../context/ModalContext";
 import { supabase } from "../lib/supabase";
 
 export default function Contact() {
