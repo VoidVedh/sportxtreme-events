@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { supabase } from "../lib/supabase";
@@ -33,6 +33,13 @@ export default function RegisterPage() {
 
   const [status, setStatus] = useState({ loading: false, success: false, error: "" });
   const [ticket, setTicket] = useState(null);
+  const errorSummaryRef = useRef(null);
+
+  useEffect(() => {
+    if (status.error && errorSummaryRef.current) {
+      errorSummaryRef.current.focus();
+    }
+  }, [status.error]);
 
   // Fetch active events once on mount
   useEffect(() => {
@@ -277,6 +284,7 @@ export default function RegisterPage() {
             </Link>
 
             <SectionHeading
+              as="h1"
               eyebrow="Participant Onboarding"
               title="EVENT"
               accentTitle="REGISTRATION"
@@ -471,6 +479,9 @@ export default function RegisterPage() {
 
                 {status.error && (
                   <div
+                    ref={errorSummaryRef}
+                    id="reg-error-summary"
+                    tabIndex="-1"
                     role="alert"
                     style={{
                       background: "rgba(229, 9, 20, 0.12)",
@@ -480,6 +491,7 @@ export default function RegisterPage() {
                       color: "#ff6b6b",
                       fontSize: "0.88rem",
                       marginBottom: 20,
+                      outline: "none",
                     }}
                   >
                     {status.error}

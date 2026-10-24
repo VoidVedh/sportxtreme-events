@@ -208,6 +208,7 @@ export default function GalleryPage() {
             </Link>
 
             <SectionHeading
+              as="h1"
               eyebrow="Visual Archives"
               title="EVENT"
               accentTitle="GALLERY"

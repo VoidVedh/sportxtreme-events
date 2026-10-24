@@ -14,6 +14,7 @@ export default function SectionHeading({
   accentTitle,
   description,
   align = "left",
+  as: HeadingTag = "h2",
 }) {
   const isCenter = align === "center";
 
@@ -40,7 +41,7 @@ export default function SectionHeading({
         </div>
       )}
 
-      <h2
+      <HeadingTag
         className="sx-display"
         style={{
           fontSize: "clamp(2.2rem, 5vw, 3.8rem)",

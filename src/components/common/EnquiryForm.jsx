@@ -67,6 +67,9 @@ export default function EnquiryForm() {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      const firstField = Object.keys(validationErrors)[0];
+      const el = document.getElementById(`enquiry-${firstField}`);
+      if (el) el.focus();
       return;
     }
 
@@ -224,8 +227,13 @@ export default function EnquiryForm() {
                   if (errors.name) setErrors({ ...errors, name: null });
                 }}
                 aria-invalid={errors.name ? "true" : "false"}
+                aria-describedby={errors.name ? "enquiry-name-error" : undefined}
               />
-              {errors.name && <span className="sx-field-error">{errors.name}</span>}
+              {errors.name && (
+                <span id="enquiry-name-error" className="sx-field-error">
+                  {errors.name}
+                </span>
+              )}
             </div>
 
             {/* Email */}
@@ -245,8 +253,13 @@ export default function EnquiryForm() {
                   if (errors.email) setErrors({ ...errors, email: null });
                 }}
                 aria-invalid={errors.email ? "true" : "false"}
+                aria-describedby={errors.email ? "enquiry-email-error" : undefined}
               />
-              {errors.email && <span className="sx-field-error">{errors.email}</span>}
+              {errors.email && (
+                <span id="enquiry-email-error" className="sx-field-error">
+                  {errors.email}
+                </span>
+              )}
             </div>
           </div>
 
@@ -274,8 +287,13 @@ export default function EnquiryForm() {
                   if (errors.phone) setErrors({ ...errors, phone: null });
                 }}
                 aria-invalid={errors.phone ? "true" : "false"}
+                aria-describedby={errors.phone ? "enquiry-phone-error" : undefined}
               />
-              {errors.phone && <span className="sx-field-error">{errors.phone}</span>}
+              {errors.phone && (
+                <span id="enquiry-phone-error" className="sx-field-error">
+                  {errors.phone}
+                </span>
+              )}
             </div>
 
             {/* Event Category / Type */}
@@ -332,8 +350,13 @@ export default function EnquiryForm() {
                 if (errors.message) setErrors({ ...errors, message: null });
               }}
               aria-invalid={errors.message ? "true" : "false"}
+              aria-describedby={errors.message ? "enquiry-message-error" : undefined}
             />
-            {errors.message && <span className="sx-field-error">{errors.message}</span>}
+            {errors.message && (
+              <span id="enquiry-message-error" className="sx-field-error">
+                {errors.message}
+              </span>
+            )}
           </div>
 
           <button

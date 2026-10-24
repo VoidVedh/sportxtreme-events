@@ -115,6 +115,7 @@ export default function EventsPage() {
             </Link>
 
             <SectionHeading
+              as="h1"
               eyebrow="Competitions & Fixtures"
               title="ALL"
               accentTitle="EVENTS"
