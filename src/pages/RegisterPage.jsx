@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import QRCode from "qrcode";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { supabase } from "../lib/supabase";
 import SiteHeader from "../components/common/SiteHeader";
@@ -33,6 +34,7 @@ export default function RegisterPage() {
 
   const [status, setStatus] = useState({ loading: false, success: false, error: "" });
   const [ticket, setTicket] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const errorSummaryRef = useRef(null);
 
   useEffect(() => {
@@ -40,6 +42,28 @@ export default function RegisterPage() {
       errorSummaryRef.current.focus();
     }
   }, [status.error]);
+
+  // Generate QR Code purely in the client without external network calls
+  useEffect(() => {
+    if (ticket) {
+      // Encode strictly the opaque checkin_token. Never encode PII (no name, email, phone).
+      const token = ticket.checkin_token || ticket.registration_number || ticket.id;
+      if (token) {
+        QRCode.toDataURL(token, {
+          width: 220,
+          margin: 1,
+          color: {
+            dark: "#000000",
+            light: "#ffffff",
+          },
+        })
+          .then((url) => setQrDataUrl(url))
+          .catch((err) => {
+            console.error("QR Code generation notice:", err);
+          });
+      }
+    }
+  }, [ticket]);
 
   // Fetch active events once on mount
   useEffect(() => {
@@ -156,32 +180,61 @@ export default function RegisterPage() {
       // 1. Try secure RPC first
       let regResult = null;
       try {
-        const { data, error: rpcError } = await supabase
-          .rpc("register_participant", {
-            p_event_id: selectedEventId,
-            p_name: cleanName,
-            p_email: cleanEmail,
-            p_phone: cleanPhone,
-            p_age: parsedAge,
-            p_tshirt_size: tshirtSize,
-          })
-          .single();
+        const { data, error: rpcError } = await supabase.rpc("register_participant", {
+          p_event_id: selectedEventId,
+          p_name: cleanName,
+          p_email: cleanEmail,
+          p_phone: cleanPhone,
+          p_age: parsedAge,
+          p_tshirt_size: tshirtSize,
+        });
 
         if (rpcError) throw rpcError;
-        regResult = data;
+
+        const res = Array.isArray(data) ? data[0] : data;
+        if (res && res.success === false) {
+          // Map stable RPC error codes to user-friendly messages
+          switch (res.code) {
+            case "DUPLICATE_REGISTRATION":
+              throw new Error("You are already registered for this event with this email or phone.");
+            case "EVENT_FULL":
+              throw new Error("Registration is full. Maximum participant capacity reached.");
+            case "EVENT_CLOSED":
+            case "REGISTRATION_CLOSED":
+              throw new Error("Registration deadline for this event has passed.");
+            case "EVENT_EXPIRED":
+              throw new Error("This event has already taken place.");
+            case "EVENT_NOT_OPEN":
+              throw new Error("Registration for this event is currently unavailable.");
+            case "EVENT_NOT_FOUND":
+              throw new Error("Selected event could not be found.");
+            case "INVALID_NAME":
+              throw new Error("Please enter a valid participant name (2–100 characters).");
+            case "INVALID_EMAIL":
+              throw new Error("Please enter a valid email address.");
+            case "INVALID_PHONE":
+              throw new Error("Please enter a valid phone number.");
+            case "INVALID_AGE":
+              throw new Error("Age must be between 1 and 120.");
+            default:
+              throw new Error(res.message || "Registration failed. Please check your details.");
+          }
+        }
+        regResult = res;
       } catch (rpcErr) {
         const msg = rpcErr.message || "";
-        if (msg.includes("DUPLICATE_REGISTRATION") || msg.includes("already registered")) {
-          throw new Error("You are already registered for this event with this email address or phone number.");
-        }
-        if (msg.includes("EVENT_CLOSED") || msg.includes("deadline")) {
-          throw new Error("Registration for this event has closed.");
-        }
-        if (msg.includes("EVENT_FULL") || msg.includes("maximum participant")) {
-          throw new Error("Registration is full. Maximum participant capacity reached.");
-        }
-        if (msg.includes("INVALID_INPUT")) {
-          throw new Error(msg.replace("INVALID_INPUT:", "").trim());
+        if (
+          msg.includes("already registered") ||
+          msg.includes("capacity reached") ||
+          msg.includes("Registration deadline") ||
+          msg.includes("already taken place") ||
+          msg.includes("currently unavailable") ||
+          msg.includes("could not be found") ||
+          msg.includes("valid participant name") ||
+          msg.includes("valid email address") ||
+          msg.includes("valid phone number")
+        ) {
+          throw rpcErr;
         }
 
         // If RPC function does not exist in schema cache, fallback to direct insert
@@ -202,7 +255,7 @@ export default function RegisterPage() {
                 age: parsedAge,
                 tshirt_size: tshirtSize,
                 status: "pending",
-                qr_payload: { name: cleanName, email: cleanEmail, phone: cleanPhone },
+                qr_payload: null, // Never store PII in qr_payload
               },
             ])
             .select("id, registration_number, created_at")
@@ -210,7 +263,7 @@ export default function RegisterPage() {
 
           if (insertError) {
             if (insertError.code === "23505" || insertError.message?.includes("unique")) {
-              throw new Error("You are already registered for this event with this email address.");
+              throw new Error("You are already registered for this event with this email or phone.");
             }
             throw insertError;
           }
@@ -221,8 +274,9 @@ export default function RegisterPage() {
       }
 
       setTicket({
-        id: regResult.id,
+        id: regResult.registration_id || regResult.id,
         registration_number: regResult.registration_number || `SX-${Date.now().toString().slice(-6)}`,
+        checkin_token: regResult.check_in_token || regResult.checkin_token || regResult.id,
         name: cleanName,
         email: cleanEmail,
         eventTitle: selectedEvent?.title || "SportXtreme Event",
@@ -353,28 +407,20 @@ export default function RegisterPage() {
                     boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                   }}
                 >
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticket.id)}`}
-                    alt="Ticket QR Code"
-                    width="190"
-                    height="190"
-                    style={{ width: "100%", height: "100%", display: "block" }}
-                    onError={(e) => {
-                      // Graceful fallback if QR server is unreachable or blocked by strict CSP
-                      e.currentTarget.style.display = "none";
-                      const parent = e.currentTarget.parentElement;
-                      if (parent && !parent.querySelector(".sx-qr-fallback")) {
-                        const fallback = document.createElement("div");
-                        fallback.className = "sx-qr-fallback";
-                        fallback.style.color = "#070707";
-                        fallback.style.fontFamily = "monospace";
-                        fallback.style.fontSize = "0.78rem";
-                        fallback.style.textAlign = "center";
-                        fallback.innerHTML = `<strong>TICKET ID</strong><br/>${ticket.registration_number}`;
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                  />
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="Ticket verification QR Code"
+                      width="190"
+                      height="190"
+                      style={{ width: "100%", height: "100%", display: "block" }}
+                    />
+                  ) : (
+                    <div style={{ color: "#070707", fontFamily: "monospace", fontSize: "0.82rem", textAlign: "center" }}>
+                      <strong>OFFICIAL PASS</strong><br />
+                      {ticket.registration_number}
+                    </div>
+                  )}
                 </div>
 
                 <div
