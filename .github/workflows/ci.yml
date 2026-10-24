@@ -1,0 +1,43 @@
+name: Quality Pass CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - hardening/quality-pass
+  push:
+    branches:
+      - hardening/quality-pass
+
+jobs:
+  validate:
+    name: Lint, Build & E2E Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Build & Generate Sitemap
+        run: npm run build
+        env:
+          VITE_SITE_URL: "https://sportxtreme-events.vercel.app"
+
+      - name: Run Playwright E2E Smoke Suite
+        run: npm run test:e2e
