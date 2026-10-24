@@ -40,6 +40,7 @@ export default [
         FileReader: "readonly",
         Image: "readonly",
         FormData: "readonly",
+        Buffer: "readonly",
         IntersectionObserver: "readonly",
         sessionStorage: "readonly",
         localStorage: "readonly",
