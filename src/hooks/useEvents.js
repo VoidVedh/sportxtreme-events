@@ -24,7 +24,10 @@ export function useEvents({ limit = null } = {}) {
 
         if (limit) query = query.limit(limit);
 
-        const { data, error: dbError } = await query;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timed out")), 4000)
+        );
+        const { data, error: dbError } = await Promise.race([query, timeoutPromise]);
 
         if (cancelled) return;
         if (dbError) throw dbError;

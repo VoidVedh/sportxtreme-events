@@ -593,8 +593,8 @@ export default function RegisterPage() {
                         {status.loading
                           ? "CONFIRMING REGISTRATION…"
                           : !regStatus.isOpen
-                          ? regStatus.label.toUpperCase()
-                          : "CONFIRM REGISTRATION & GET TICKET →"}
+                            ? regStatus.label.toUpperCase()
+                            : "CONFIRM REGISTRATION & GET TICKET →"}
                       </button>
                     </div>
                   </form>

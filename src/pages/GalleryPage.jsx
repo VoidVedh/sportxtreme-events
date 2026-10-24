@@ -50,10 +50,13 @@ export default function GalleryPage() {
     async function fetchGallery() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("gallery")
-          .select("*")
-          .order("created_at", { ascending: false });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timed out")), 4000)
+        );
+        const { data, error } = await Promise.race([
+          supabase.from("gallery").select("*").order("created_at", { ascending: false }),
+          timeoutPromise,
+        ]);
 
         if (!active) return;
         if (!error && data) {
