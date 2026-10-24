@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { C } from "../data/content";
+import { Link } from "react-router-dom";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { supabase } from "../lib/supabase";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import SiteHeader from "../components/common/SiteHeader";
+import SiteFooter from "../components/common/SiteFooter";
+import SectionHeading from "../components/common/SectionHeading";
+import SafeImage from "../components/common/SafeImage";
+import "../styles/site.css";
 
-function formatCaption(caption) {
+function cleanCaption(caption) {
   if (!caption) return "SportXtreme Event";
   const trimmed = caption.trim();
   if (!trimmed) return "SportXtreme Event";
@@ -28,332 +31,374 @@ function formatCaption(caption) {
   return trimmed;
 }
 
-const CATEGORY_COLORS = {
-  Corporate: "linear-gradient(135deg, #1a0a0a, #2d1a1a)",
-  Marathon: "linear-gradient(135deg, #0a1a0a, #1a2d1a)",
-  School: "linear-gradient(135deg, #0a0a1a, #1a1a2d)",
-  League: "linear-gradient(135deg, #1a1a0a, #2d2d1a)",
-  Cycling: "linear-gradient(135deg, #0a1a1a, #1a2d2d)",
-  Aquatic: "linear-gradient(135deg, #0a0a1a, #1a1a3d)",
-};
-
-const getCategoryGradient = (category) => {
-  return CATEGORY_COLORS[category] || "linear-gradient(135deg, #0a0a0a, #1a1a1a)";
-};
-
-function GalleryItem({ item, idx, onClick }) {
-  const gradient = getCategoryGradient(item.category);
-  
-  return (
-    <div
-      className="card-lift"
-      onClick={() => onClick(item)}
-      style={{
-        border: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(255,255,255,0.01)",
-        overflow: "hidden",
-        cursor: "pointer",
-      }}
-    >
-      <div
-        style={{
-          height: 200,
-          position: "relative",
-          background: item.url ? `url(${item.url}) center/cover no-repeat` : gradient,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {!item.url && (
-          <div
-            style={{
-              fontSize: "3rem",
-              opacity: 0.3,
-              animation: `floatY ${3 + idx * 0.3}s ease-in-out infinite`,
-              animationDelay: `${idx * 0.2}s`,
-            }}
-          >
-            📷
-          </div>
-        )}
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            background: C.red,
-            padding: "3px 10px",
-            fontFamily: "'Bebas Neue', cursive",
-            fontSize: "0.68rem",
-            letterSpacing: "0.1em",
-          }}
-        >
-          {item.category}
-        </div>
-      </div>
-      <div style={{ padding: "16px 20px" }}>
-        <div style={{ fontSize: "0.85rem", color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
-          {formatCaption(item.caption)}
-        </div>
-        <div style={{ fontSize: "0.73rem", color: C.gray }}>
-          {item.event}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GalleryModal({ item, onClose }) {
-  if (!item) return null;
-
-  const gradient = getCategoryGradient(item.category);
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 500,
-        background: "rgba(0,0,0,0.9)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          maxWidth: 900,
-          width: "100%",
-          maxHeight: "90vh",
-          background: "#0a0a0a",
-          border: "1px solid rgba(229,9,20,0.2)",
-          overflow: "hidden",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          style={{
-            height: 400,
-            background: item.url ? `url(${item.url}) center/cover no-repeat` : gradient,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {!item.url && (
-            <div style={{ fontSize: "5rem", opacity: 0.3 }}>📷</div>
-          )}
-        </div>
-        <div style={{ padding: "32px" }}>
-          <h2 className="bebas" style={{ fontSize: "1.8rem", marginBottom: 12 }}>
-            {formatCaption(item.caption)}
-          </h2>
-          <div style={{ display: "flex", gap: 16, color: C.gray, fontSize: "0.85rem" }}>
-            <span>Category: {item.category}</span>
-            <span>Event: {item.event}</span>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 20,
-            background: "rgba(0,0,0,0.5)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            color: "#fff",
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            cursor: "pointer",
-            fontSize: "1.2rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          ✕
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function GalleryPage() {
-  const navigate = useNavigate();
-  const [filter, setFilter] = useState("All");
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [gallery, setGallery] = useState([]);
-  const [galleryLoading, setGalleryLoading] = useState(true);
+  useDocumentMeta({
+    title: "Event Gallery | SportXtreme Events",
+    description:
+      "Visual archives and snapshots from tournaments, championships, and athletic events managed by SportXtreme Events.",
+    canonical: "https://sportxtreme.com/gallery",
+  });
 
+  const [gallery, setGallery] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [activeModalItem, setActiveModalItem] = useState(null);
+
+  // Fetch all gallery items from Supabase
   useEffect(() => {
-    let cancelled = false;
+    let active = true;
     async function fetchGallery() {
-      setGalleryLoading(true);
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from("gallery")
           .select("*")
           .order("created_at", { ascending: false });
-        if (cancelled) return;
-        if (error) throw error;
-        // Map event_name -> event for component compatibility
-        const mapped = (data || []).map(item => ({
-          ...item,
-          event: item.event_name || item.event || "",
-        }));
-        setGallery(mapped);
+
+        if (!active) return;
+        if (!error && data) {
+          setGallery(data);
+        }
       } catch (err) {
-        console.error("Gallery fetch error:", err);
-        if (!cancelled) setGallery([]);
+        console.warn("Gallery fetch notice:", err.message || err);
       } finally {
-        if (!cancelled) setGalleryLoading(false);
+        if (active) setLoading(false);
       }
     }
+
     fetchGallery();
-    return () => { cancelled = true; };
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const filtered = filter === "All"
-    ? gallery
-    : gallery.filter((item) => item.category === filter);
+  // Modal ESC key listener & body scroll lock
+  useEffect(() => {
+    if (!activeModalItem) return;
 
-  const categories = ["All", ...new Set(gallery.map(item => item.category).filter(Boolean))];
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setActiveModalItem(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeModalItem]);
+
+  // Extract distinct categories from actual gallery data
+  const categories = [
+    "All",
+    ...new Set(gallery.map((g) => g.category).filter(Boolean)),
+  ];
+
+  const filteredItems = filter === "All"
+    ? gallery
+    : gallery.filter((g) => (g.category || "").toLowerCase() === filter.toLowerCase());
 
   return (
-    <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>
-      <Navbar />
+    <div className="sx-site">
+      <a href="#main-content" className="sx-skip-link">
+        Skip to main content
+      </a>
 
-      {/* Hero banner */}
-      <div
-        style={{
-          paddingTop: 120,
-          paddingBottom: 64,
-          paddingLeft: "5%",
-          paddingRight: "5%",
-          background: `radial-gradient(ellipse 60% 60% at 60% 50%, rgba(229,9,20,0.08) 0%, transparent 70%), ${C.black}`,
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Watermark */}
-        <div
+      <SiteHeader />
+
+      <main id="main-content">
+        {/* Banner */}
+        <section
           style={{
-            position: "absolute",
-            right: "-2%",
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontFamily: "'Bebas Neue', cursive",
-            fontSize: "20vw",
-            color: "rgba(229,9,20,0.03)",
-            lineHeight: 1,
-            userSelect: "none",
-            pointerEvents: "none",
+            padding: "64px 0 40px",
+            background: "var(--sx-bg-subtle)",
+            borderBottom: "1px solid var(--sx-border)",
           }}
         >
-          GALLERY
-        </div>
+          <div className="sx-container">
+            <Link
+              to="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--sx-text-muted)",
+                textDecoration: "none",
+                fontSize: "0.85rem",
+                fontFamily: "var(--sx-font-display)",
+                letterSpacing: "0.06em",
+                marginBottom: 24,
+                transition: "color var(--sx-transition-fast)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--sx-red)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--sx-text-muted)")}
+            >
+              ← BACK TO HOME
+            </Link>
 
-        <button
-          onClick={() => navigate(-1)}
-          style={{
-            background: "none",
-            border: "1px solid rgba(255,255,255,0.15)",
-            color: "rgba(255,255,255,0.5)",
-            cursor: "pointer",
-            padding: "8px 18px",
-            fontSize: "0.78rem",
-            letterSpacing: "0.1em",
-            fontFamily: "'Bebas Neue', cursive",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 28,
-            transition: "all 0.3s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = C.red;
-            e.currentTarget.style.color = C.red;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
-            e.currentTarget.style.color = "rgba(255,255,255,0.5)";
-          }}
-        >
-          ← BACK
-        </button>
+            <SectionHeading
+              eyebrow="Visual Archives"
+              title="EVENT"
+              accentTitle="GALLERY"
+              description="Moments of competitive excellence, team spirit, and podium finishes across our managed events."
+            />
+          </div>
+        </section>
 
-        <div className="eyebrow" style={{ position: "relative" }}>Event Memories</div>
-        <h1 className="bebas" style={{ fontSize: "clamp(3rem, 8vw, 6rem)", lineHeight: 0.9, position: "relative" }}>
-          OUR <span style={{ color: C.red }}>GALLERY</span>
-        </h1>
-        <p style={{ color: C.gray, marginTop: 20, maxWidth: 520, lineHeight: 1.75, position: "relative" }}>
-          Capturing moments from our sports event management tournaments.
-        </p>
-      </div>
-
-      {/* Filter bar */}
-      <div
-        style={{
-          padding: "0 5%",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          display: "flex",
-          overflowX: "auto",
-          gap: 0,
-          background: "rgba(255,255,255,0.01)",
-        }}
-      >
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            className={`sport-tab${filter === cat ? " on" : ""}`}
-            onClick={() => setFilter(cat)}
+        {/* Category Filter Bar */}
+        {categories.length > 1 && (
+          <section
+            style={{
+              padding: "16px 0",
+              borderBottom: "1px solid var(--sx-border)",
+              background: "var(--sx-bg)",
+            }}
           >
-            {cat.toUpperCase()}
-          </button>
-        ))}
-      </div>
+            <div className="sx-container">
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}
+                role="tablist"
+                aria-label="Gallery categories"
+              >
+                {categories.map((cat) => {
+                  const isSelected = filter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => setFilter(cat)}
+                      style={{
+                        background: isSelected ? "var(--sx-red)" : "var(--sx-surface)",
+                        color: isSelected ? "#fff" : "var(--sx-text-secondary)",
+                        border: "1px solid",
+                        borderColor: isSelected ? "var(--sx-red)" : "var(--sx-border)",
+                        borderRadius: "var(--sx-radius-sm)",
+                        padding: "8px 16px",
+                        fontFamily: "var(--sx-font-display)",
+                        fontSize: "0.95rem",
+                        letterSpacing: "0.06em",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all var(--sx-transition-fast)",
+                      }}
+                    >
+                      {cat.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
 
-      {/* Gallery grid */}
-      <div style={{ padding: "60px 5% 100px" }}>
-        <p style={{ color: C.gray, fontSize: "0.8rem", marginBottom: 28, letterSpacing: "0.1em" }}>
-          SHOWING {filtered.length} PHOTO{filtered.length !== 1 ? "S" : ""}
-          {filter !== "All" ? ` · ${filter.toUpperCase()}` : ""}
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-          {filtered.map((item, idx) => (
-            <GalleryItem key={item.id} item={item} idx={idx} onClick={setSelectedItem} />
-          ))}
-        </div>
+        {/* Gallery Grid */}
+        <section style={{ padding: "64px 0 100px" }}>
+          <div className="sx-container">
+            {loading ? (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: 20,
+                }}
+              >
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="sx-skeleton"
+                    style={{ height: 260, borderRadius: "var(--sx-radius-sm)" }}
+                  />
+                ))}
+              </div>
+            ) : filteredItems.length > 0 ? (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: 24,
+                }}
+              >
+                {filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="sx-card"
+                    onClick={() => setActiveModalItem(item)}
+                    style={{
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveModalItem(item);
+                      }
+                    }}
+                    aria-label={`View photo: ${cleanCaption(item.caption)}`}
+                  >
+                    <div style={{ height: 220, position: "relative", overflow: "hidden" }}>
+                      <SafeImage
+                        src={item.url}
+                        alt={cleanCaption(item.caption)}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        fallbackIcon="📸"
+                      />
+                      {item.category && (
+                        <span
+                          className="sx-badge sx-badge-red"
+                          style={{
+                            position: "absolute",
+                            top: 10,
+                            left: 10,
+                          }}
+                        >
+                          {item.category}
+                        </span>
+                      )}
+                    </div>
 
-        {filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "100px 20px" }}>
-            <div style={{ fontSize: "4rem", marginBottom: 20 }}>📷</div>
-            <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 12 }}>
-              {filter !== "All" ? `NO ${filter.toUpperCase()} PHOTOS` : "No gallery images available."}
-            </h2>
-            <p style={{ color: C.gray, marginBottom: 32 }}>
-              {filter !== "All"
-                ? `No photos found under category "${filter}".`
-                : "Images uploaded by the administrator will appear here."}
-            </p>
-            {filter !== "All" && (
-              <button className="out-btn" onClick={() => setFilter("All")}>
-                VIEW ALL PHOTOS
-              </button>
+                    <div style={{ padding: "16px 18px", flexGrow: 1 }}>
+                      <div
+                        style={{
+                          fontSize: "0.92rem",
+                          fontWeight: 600,
+                          color: "var(--sx-text-primary)",
+                          lineHeight: 1.4,
+                          marginBottom: 4,
+                        }}
+                      >
+                        {cleanCaption(item.caption)}
+                      </div>
+                      {item.event_name && (
+                        <div style={{ fontSize: "0.78rem", color: "var(--sx-text-muted)" }}>
+                          {item.event_name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                className="sx-card"
+                style={{
+                  textAlign: "center",
+                  padding: "80px 24px",
+                  background: "var(--sx-surface)",
+                }}
+              >
+                <div style={{ fontSize: "3.5rem", marginBottom: 16 }}>📸</div>
+                <h3 className="sx-display" style={{ fontSize: "1.8rem", marginBottom: 10 }}>
+                  NO GALLERY IMAGES AVAILABLE
+                </h3>
+                <p style={{ color: "var(--sx-text-muted)", maxWidth: 440, margin: "0 auto", fontSize: "0.92rem", lineHeight: 1.6 }}>
+                  {filter !== "All"
+                    ? `No images categorized under ${filter}.`
+                    : "Event photographs will appear here once published by tournament coordinators."}
+                </p>
+                {filter !== "All" && (
+                  <button
+                    type="button"
+                    className="sx-btn-secondary"
+                    onClick={() => setFilter("All")}
+                    style={{ marginTop: 20 }}
+                  >
+                    View All Categories
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </section>
+      </main>
 
-      {/* Modal */}
-      <GalleryModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      {/* Accessible Full-Size Modal Preview */}
+      {activeModalItem && (
+        <div
+          className="sx-modal-overlay"
+          onClick={() => setActiveModalItem(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div
+            className="sx-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              maxWidth: 900,
+              overflow: "hidden",
+            }}
+          >
+            {/* Anchored Modal Close Button */}
+            <button
+              type="button"
+              onClick={() => setActiveModalItem(null)}
+              aria-label="Close modal"
+              style={{
+                position: "absolute",
+                top: 14,
+                right: 14,
+                zIndex: 10,
+                background: "rgba(0, 0, 0, 0.75)",
+                border: "1px solid var(--sx-border-strong)",
+                color: "#fff",
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.1rem",
+                transition: "background var(--sx-transition-fast)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sx-red)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0, 0, 0, 0.75)")}
+            >
+              ✕
+            </button>
 
-      <Footer />
+            <div style={{ maxHeight: "65vh", overflow: "hidden", background: "#000" }}>
+              <SafeImage
+                src={activeModalItem.url}
+                alt={cleanCaption(activeModalItem.caption)}
+                style={{
+                  width: "100%",
+                  maxHeight: "65vh",
+                  objectFit: "contain",
+                }}
+                fallbackIcon="📸"
+              />
+            </div>
+
+            <div style={{ padding: "24px 28px" }}>
+              <h3 className="sx-display" style={{ fontSize: "1.5rem", marginBottom: 8 }}>
+                {cleanCaption(activeModalItem.caption)}
+              </h3>
+              <div style={{ display: "flex", gap: 16, color: "var(--sx-text-muted)", fontSize: "0.85rem" }}>
+                {activeModalItem.category && <span>Category: {activeModalItem.category}</span>}
+                {activeModalItem.event_name && <span>Event: {activeModalItem.event_name}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SiteFooter />
     </div>
   );
 }

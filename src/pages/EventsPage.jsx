@@ -1,292 +1,307 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { C } from "../data/content";
+import { Link } from "react-router-dom";
+import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { useEvents } from "../hooks/useEvents";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-
-const isRegistrationEnabled = (ev) => {
-  if (ev.status && ev.status !== "upcoming") return false;
-
-  if (ev.registration_deadline) {
-    const deadline = new Date(ev.registration_deadline);
-    const today = new Date();
-    deadline.setHours(23, 59, 59, 999);
-    if (today > deadline) return false;
-  }
-
-  return true;
-};
-
-function EventCard({ ev }) {
-  const navigate = useNavigate();
-  const title        = ev.title    || ev.name || "Untitled Event";
-  const location     = ev.location || "";
-  const image        = ev.image_url || null;
-  const regEnabled   = isRegistrationEnabled(ev);
-
-  const date = ev.event_date
-    ? new Date(ev.event_date).toLocaleDateString("en-IN", {
-        day: "numeric", month: "long", year: "numeric",
-      })
-    : "";
-
-  return (
-    <article
-      className="card-lift"
-      style={{
-        border: "1px solid rgba(255,255,255,0.06)",
-        background: "rgba(255,255,255,0.01)",
-        overflow: "hidden",
-        display: "flex", flexDirection: "column",
-      }}
-    >
-      {/* Image / thumbnail */}
-      <div
-        style={{
-          height: 200, position: "relative",
-          background: image
-            ? `url(${image}) center/cover no-repeat`
-            : "linear-gradient(135deg, #0d0000, #1a0505)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {!image && (
-          <div style={{ fontSize: "3rem", opacity: 0.18 }}>🏆</div>
-        )}
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: "24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 14 }}>
-        <div>
-          <h3 className="bebas" style={{ fontSize: "1.35rem", letterSpacing: "0.03em", marginBottom: 12, color: "#FFFFFF" }}>
-            {title}
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-            {date && (
-              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                📅 {date}
-              </span>
-            )}
-            {location && (
-              <span style={{ fontSize: "0.8rem", color: C.gray, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                📍 {location}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {regEnabled && (
-          <button
-            className="red-btn"
-            style={{ width: "100%", padding: "12px 0", fontSize: "0.85rem", letterSpacing: "0.05em", cursor: "pointer" }}
-            onClick={() => navigate(`/register/${ev.id}`)}
-          >
-            REGISTER NOW
-          </button>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function EventSkeleton() {
-  return (
-    <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", overflow: "hidden" }}>
-      <div style={{ height: 200, background: "rgba(255,255,255,0.03)" }} />
-      <div style={{ padding: "24px" }}>
-        <div style={{ height: 18, background: "rgba(255,255,255,0.05)", marginBottom: 12, borderRadius: 2 }} />
-        <div style={{ height: 14, width: "60%", background: "rgba(255,255,255,0.03)", borderRadius: 2 }} />
-      </div>
-    </div>
-  );
-}
+import SiteHeader from "../components/common/SiteHeader";
+import SiteFooter from "../components/common/SiteFooter";
+import SectionHeading from "../components/common/SectionHeading";
+import EventCard from "../components/common/EventCard";
+import EventCardSkeleton from "../components/common/EventCardSkeleton";
+import "../styles/site.css";
 
 export default function EventsPage() {
-  const navigate   = useNavigate();
+  useDocumentMeta({
+    title: "All Events & Tournaments | SportXtreme Events",
+    description:
+      "Browse active sports tournaments, corporate cups, school championships, and upcoming marathons coordinated by SportXtreme Events.",
+    canonical: "https://sportxtreme.com/events",
+  });
+
   const { events, loading, error } = useEvents();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
-  const categories = ["All", ...new Set(events.map((ev) => ev.category).filter(Boolean))];
+  // Extract distinct sports/categories from real event data
+  const categories = ["All", ...new Set(events.map((ev) => ev.category || ev.sport).filter(Boolean))];
 
-  const filtered = filter === "All"
-    ? events
-    : events.filter((ev) => {
-        const cat = (ev.category || "").toLowerCase();
-        return cat === filter.toLowerCase();
-      });
+  // Filter and search against real fields only
+  const filteredEvents = events.filter((ev) => {
+    // Category filter
+    if (filter !== "All") {
+      const cat = (ev.category || ev.sport || "").toLowerCase();
+      if (cat !== filter.toLowerCase()) return false;
+    }
 
-  const searched = search.trim()
-    ? filtered.filter((ev) => {
-        const query = search.toLowerCase();
-        return (
-          (ev.title || "").toLowerCase().includes(query) ||
-          (ev.sport || "").toLowerCase().includes(query) ||
-          (ev.location || "").toLowerCase().includes(query) ||
-          (ev.category || "").toLowerCase().includes(query)
-        );
-      })
-    : filtered;
+    // Search query
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const matchTitle = (ev.title || ev.name || "").toLowerCase().includes(q);
+      const matchSport = (ev.sport || "").toLowerCase().includes(q);
+      const matchLocation = (ev.location || "").toLowerCase().includes(q);
+      const matchCategory = (ev.category || "").toLowerCase().includes(q);
+      return matchTitle || matchSport || matchLocation || matchCategory;
+    }
+
+    return true;
+  });
 
   return (
-    <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>
-      <Navbar />
+    <div className="sx-site">
+      <a href="#main-content" className="sx-skip-link">
+        Skip to main content
+      </a>
 
-      {/* Hero banner */}
-      <div
-        style={{
-          paddingTop: 120, paddingBottom: 64,
-          paddingLeft: "5%", paddingRight: "5%",
-          background: `radial-gradient(ellipse 60% 60% at 60% 50%, rgba(229,9,20,0.08) 0%, transparent 70%), ${C.black}`,
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Watermark */}
-        <div
+      <SiteHeader />
+
+      <main id="main-content">
+        {/* Banner */}
+        <section
           style={{
-            position: "absolute", right: "-2%", top: "50%", transform: "translateY(-50%)",
-            fontFamily: "'Bebas Neue', cursive", fontSize: "20vw",
-            color: "rgba(229,9,20,0.03)", lineHeight: 1, userSelect: "none", pointerEvents: "none",
+            padding: "64px 0 40px",
+            background: "var(--sx-bg-subtle)",
+            borderBottom: "1px solid var(--sx-border)",
           }}
         >
-          EVENTS
-        </div>
+          <div className="sx-container">
+            <Link
+              to="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--sx-text-muted)",
+                textDecoration: "none",
+                fontSize: "0.85rem",
+                fontFamily: "var(--sx-font-display)",
+                letterSpacing: "0.06em",
+                marginBottom: 24,
+                transition: "color var(--sx-transition-fast)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--sx-red)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--sx-text-muted)")}
+            >
+              ← BACK TO HOME
+            </Link>
 
-        <button
-          onClick={() => navigate(-1)}
+            <SectionHeading
+              eyebrow="Competitions & Fixtures"
+              title="ALL"
+              accentTitle="EVENTS"
+              description="Explore corporate leagues, school championships, open tournaments, and mass marathons across India."
+            />
+          </div>
+        </section>
+
+        {/* Filter and Search Bar */}
+        <section
           style={{
-            background: "none", border: "1px solid rgba(255,255,255,0.15)",
-            color: "rgba(255,255,255,0.5)", cursor: "pointer",
-            padding: "8px 18px", fontSize: "0.78rem", letterSpacing: "0.1em",
-            fontFamily: "'Bebas Neue', cursive",
-            display: "flex", alignItems: "center", gap: 8,
-            marginBottom: 28,
-            transition: "all 0.3s",
+            padding: "20px 0",
+            borderBottom: "1px solid var(--sx-border)",
+            background: "var(--sx-bg)",
+            position: "sticky",
+            top: 72,
+            zIndex: 800,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.red; e.currentTarget.style.color = C.red; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         >
-          ← BACK
-        </button>
+          <div className="sx-container">
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 16,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              {/* Category Pills */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                  maxWidth: "100%",
+                }}
+                role="tablist"
+                aria-label="Event categories"
+              >
+                {categories.map((cat) => {
+                  const isSelected = filter === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => setFilter(cat)}
+                      style={{
+                        background: isSelected ? "var(--sx-red)" : "var(--sx-surface)",
+                        color: isSelected ? "#fff" : "var(--sx-text-secondary)",
+                        border: "1px solid",
+                        borderColor: isSelected ? "var(--sx-red)" : "var(--sx-border)",
+                        borderRadius: "var(--sx-radius-sm)",
+                        padding: "8px 16px",
+                        fontFamily: "var(--sx-font-display)",
+                        fontSize: "0.95rem",
+                        letterSpacing: "0.06em",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all var(--sx-transition-fast)",
+                      }}
+                    >
+                      {cat.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
 
-        <div className="eyebrow" style={{ position: "relative" }}>Our Event Portfolio</div>
-        <h1 className="bebas" style={{ fontSize: "clamp(3rem, 8vw, 6rem)", lineHeight: 0.9, position: "relative" }}>
-          ALL EVENTS<br /><span style={{ color: C.red }}>WE&apos;VE DELIVERED</span>
-        </h1>
-        <p style={{ color: C.gray, marginTop: 20, maxWidth: 520, lineHeight: 1.75, position: "relative" }}>
-          From corporate leagues to school championships and marathons — professional sports event coordination.
-        </p>
-      </div>
-
-      {/* Filter bar */}
-      <div
-        style={{
-          padding: "0 5%",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          display: "flex", overflowX: "auto", gap: 0,
-          background: "rgba(255,255,255,0.01)",
-        }}
-      >
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            className={`sport-tab${filter === cat ? " on" : ""}`}
-            onClick={() => setFilter(cat)}
-            id={`events-filter-${cat.toLowerCase()}`}
-          >
-            {cat.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      {/* Search bar */}
-      <div style={{ padding: "20px 5%", background: "rgba(255,255,255,0.01)" }}>
-        <input
-          type="text"
-          placeholder="Search events by name, sport, or location..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="form-f"
-          style={{
-            width: "100%",
-            padding: "14px 20px",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#fff",
-            fontSize: "0.9rem",
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: "60px 5% 100px" }}>
-        {/* Error banner */}
-        {error && (
-          <div style={{
-            padding: "14px 20px", marginBottom: 32,
-            background: "rgba(229,9,20,0.08)", border: "1px solid rgba(229,9,20,0.2)",
-            color: C.red, fontSize: "0.85rem",
-          }}>
-            ⚠ Could not load events: {error}
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-            {Array.from({ length: 6 }).map((_, i) => <EventSkeleton key={i} />)}
-          </div>
-        )}
-
-        {/* Events grid */}
-        {!loading && searched.length > 0 && (
-          <>
-            <p style={{ color: C.gray, fontSize: "0.8rem", marginBottom: 28, letterSpacing: "0.1em" }}>
-              SHOWING {searched.length} EVENT{searched.length !== 1 ? "S" : ""}
-              {filter !== "All" ? ` · ${filter.toUpperCase()}` : ""}
-              {search.trim() ? ` · Search: "${search}"` : ""}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-              {searched.map((ev, i) => (
-                <EventCard key={ev.id || ev.title || i} ev={ev} idx={i} />
-              ))}
+              {/* Search Field */}
+              <div style={{ flex: "1 1 240px", maxWidth: 360, minWidth: 200 }}>
+                <label htmlFor="event-search-input" className="sx-label" style={{ display: "none" }}>
+                  Search Events
+                </label>
+                <input
+                  id="event-search-input"
+                  type="search"
+                  className="sx-input"
+                  placeholder="Search by title, sport, or city..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ padding: "9px 14px", fontSize: "0.88rem" }}
+                />
+              </div>
             </div>
-          </>
-        )}
+          </div>
+        </section>
 
-        {/* Empty state */}
-        {!loading && !error && searched.length === 0 && (
-          <div style={{ textAlign: "center", padding: "100px 20px" }}>
-            <div style={{ fontSize: "4rem", marginBottom: 20 }}>📅</div>
-            <h2 className="bebas" style={{ fontSize: "2rem", marginBottom: 12 }}>
-              NO EVENTS FOUND
-            </h2>
-            <p style={{ color: C.gray, marginBottom: 32 }}>
-              {search.trim()
-                ? `No events matching "${search}". Try a different search term.`
-                : filter !== "All"
-                ? `No ${filter} events yet. Try a different category.`
-                : "No upcoming events."}
-            </p>
-            {filter !== "All" && (
-              <button className="out-btn" onClick={() => setFilter("All")}>
-                VIEW ALL EVENTS
-              </button>
+        {/* Content Section */}
+        <section style={{ padding: "64px 0 100px" }}>
+          <div className="sx-container">
+            {/* Error State with Retry */}
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  background: "rgba(229, 9, 20, 0.1)",
+                  border: "1px solid var(--sx-red)",
+                  borderRadius: "var(--sx-radius-sm)",
+                  padding: "24px",
+                  textAlign: "center",
+                  marginBottom: 32,
+                }}
+              >
+                <div style={{ fontSize: "1.8rem", marginBottom: 8 }}>⚠️</div>
+                <h3 className="sx-display" style={{ fontSize: "1.3rem", color: "var(--sx-red)", marginBottom: 8 }}>
+                  COULD NOT LOAD EVENTS
+                </h3>
+                <p style={{ color: "var(--sx-text-muted)", fontSize: "0.9rem", marginBottom: 16 }}>
+                  {error || "An error occurred while communicating with the database."}
+                </p>
+                <button
+                  type="button"
+                  className="sx-btn-secondary"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry Loading
+                </button>
+              </div>
             )}
-            {search.trim() && (
-              <button className="out-btn" onClick={() => setSearch("")} style={{ marginLeft: 12 }}>
-                CLEAR SEARCH
-              </button>
+
+            {/* Loading Skeleton */}
+            {loading && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                  gap: 28,
+                }}
+              >
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <EventCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
+
+            {/* Results Grid */}
+            {!loading && !error && filteredEvents.length > 0 && (
+              <>
+                <div
+                  style={{
+                    color: "var(--sx-text-dim)",
+                    fontSize: "0.82rem",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    marginBottom: 24,
+                  }}
+                >
+                  Showing {filteredEvents.length} Event{filteredEvents.length !== 1 ? "s" : ""}
+                  {filter !== "All" && ` • Category: ${filter}`}
+                  {search.trim() && ` • Query: "${search}"`}
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                    gap: 28,
+                  }}
+                >
+                  {filteredEvents.map((ev) => (
+                    <EventCard key={ev.id} event={ev} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && filteredEvents.length === 0 && (
+              <div
+                className="sx-card"
+                style={{
+                  textAlign: "center",
+                  padding: "80px 24px",
+                  background: "var(--sx-surface)",
+                }}
+              >
+                <div style={{ fontSize: "3.5rem", marginBottom: 16 }}>🔍</div>
+                <h3 className="sx-display" style={{ fontSize: "1.8rem", marginBottom: 10 }}>
+                  NO MATCHING EVENTS FOUND
+                </h3>
+                <p style={{ color: "var(--sx-text-muted)", maxWidth: 440, margin: "0 auto 24px", fontSize: "0.92rem", lineHeight: 1.6 }}>
+                  {search.trim()
+                    ? `No events matching "${search}". Try adjusting your keywords or category filter.`
+                    : filter !== "All"
+                    ? `No events currently listed under ${filter}.`
+                    : "No events are scheduled at this time. Check back soon."}
+                </p>
+
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                  {filter !== "All" && (
+                    <button
+                      type="button"
+                      className="sx-btn-secondary"
+                      onClick={() => setFilter("All")}
+                    >
+                      Clear Category Filter
+                    </button>
+                  )}
+                  {search.trim() && (
+                    <button
+                      type="button"
+                      className="sx-btn-secondary"
+                      onClick={() => setSearch("")}
+                    >
+                      Clear Search
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </section>
+      </main>
 
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }
