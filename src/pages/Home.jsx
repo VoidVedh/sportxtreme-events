@@ -18,8 +18,8 @@ export default function Home() {
     title: "SportXtreme Events | Professional Sports Event Management",
     description:
       "SportXtreme Events coordinates professional sports events across India — corporate sports leagues, marathons, tournaments, school championships, and gate operations.",
-    canonical: "https://sportxtreme.com/",
-    ogImage: "https://sportxtreme.com/og-image.jpg",
+    canonical: "/",
+    ogImage: "/og-image.jpg",
   });
 
   const { events, loading: eventsLoading } = useEvents({ limit: 3 });

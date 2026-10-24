@@ -12,7 +12,8 @@ export default function RegisterPage() {
   useDocumentMeta({
     title: "Participant Registration | SportXtreme Events",
     description: "Official participant onboarding and ticket confirmation for SportXtreme Events.",
-    canonical: "https://sportxtreme.com/register",
+    canonical: "/register",
+    ogImage: "/og-image.jpg",
   });
 
   const { eventId } = useParams();

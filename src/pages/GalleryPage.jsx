@@ -36,7 +36,8 @@ export default function GalleryPage() {
     title: "Event Gallery | SportXtreme Events",
     description:
       "Visual archives and snapshots from tournaments, championships, and athletic events managed by SportXtreme Events.",
-    canonical: "https://sportxtreme.com/gallery",
+    canonical: "/gallery",
+    ogImage: "/og-image.jpg",
   });
 
   const [gallery, setGallery] = useState([]);

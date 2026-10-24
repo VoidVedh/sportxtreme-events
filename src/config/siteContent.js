@@ -7,9 +7,16 @@
  * Never fabricate dates, prices, participant numbers, client logos, or testimonials.
  */
 
+export const SITE_URL =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_SITE_URL) ||
+  (typeof window !== "undefined" && window.location.origin
+    ? window.location.origin
+    : "https://sportxtreme.com");
+
 export const SITE_CONFIG = {
   brand: {
     name: "SportXtreme Events",
+    siteUrl: SITE_URL,
     tagline: "The Plan Behind The Play",
     logoUrl: "/sportxtreme-logo.jpg",
     logoAlt: "SportXtreme Events — The Plan Behind The Play",

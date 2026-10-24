@@ -10,16 +10,47 @@ import EventCardSkeleton from "../components/common/EventCardSkeleton";
 import "../styles/site.css";
 
 export default function EventsPage() {
+  const { events, loading, error, refetch } = useEvents();
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+
+  // Build Schema.org SportsEvent JSON-LD from real event fields only
+  const eventSchemas = events
+    .filter((e) => e.title && e.event_date)
+    .map((e) => {
+      const item = {
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        name: e.title,
+        startDate: e.event_date,
+        eventStatus: "https://schema.org/EventScheduled",
+      };
+      if (e.description) item.description = e.description;
+      if (e.image_url) item.image = e.image_url;
+      if (e.location) {
+        item.location = {
+          "@type": "Place",
+          name: e.location,
+          address: e.location,
+        };
+      }
+      return item;
+    });
+
+  const jsonLd =
+    eventSchemas.length > 0
+      ? eventSchemas.length === 1
+        ? eventSchemas[0]
+        : eventSchemas
+      : null;
+
   useDocumentMeta({
     title: "All Events & Tournaments | SportXtreme Events",
     description:
       "Browse active sports tournaments, corporate cups, school championships, and upcoming marathons coordinated by SportXtreme Events.",
-    canonical: "https://sportxtreme.com/events",
+    canonical: "/events",
+    jsonLd,
   });
-
-  const { events, loading, error, refetch } = useEvents();
-  const [filter, setFilter] = useState("All");
-  const [search, setSearch] = useState("");
 
   // Extract distinct sports/categories from real event data
   const categories = ["All", ...new Set(events.map((ev) => ev.category || ev.sport).filter(Boolean))];
