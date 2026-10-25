@@ -38,6 +38,12 @@ jobs:
         run: npm run build
         env:
           VITE_SITE_URL: "https://sportxtreme-events.vercel.app"
+          VITE_SUPABASE_URL: "https://bwgmsjyouvnswftmrnkm.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder_key"
 
       - name: Run Playwright E2E Smoke Suite
         run: npm run test:e2e
+        env:
+          VITE_SITE_URL: "https://sportxtreme-events.vercel.app"
+          VITE_SUPABASE_URL: "https://bwgmsjyouvnswftmrnkm.supabase.co"
+          VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder_key"
