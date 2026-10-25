@@ -147,6 +147,24 @@ test.describe("SportXtreme Events Smoke Suite", () => {
   });
 
   test("6. /register handles DUPLICATE_REGISTRATION error code from RPC", async ({ page }) => {
+    await page.route("**/rest/v1/events*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "00000000-0000-0000-0000-000000000001",
+            title: "National Marathon 2026",
+            status: "open",
+            event_date: "2026-12-31",
+            registration_deadline: "2026-12-01",
+            max_participants: 500,
+            registration_price: 499,
+          },
+        ]),
+      });
+    });
+
     await page.route("**/rest/v1/rpc/register_participant", async (route) => {
       await route.fulfill({
         status: 200,
@@ -166,10 +184,8 @@ test.describe("SportXtreme Events Smoke Suite", () => {
 
     await page.goto("/register");
     const eventSelect = page.locator("#reg-event-select");
-    const options = await eventSelect.locator("option").all();
-    if (options.length > 1) {
-      await eventSelect.selectOption({ index: 1 });
-    }
+    await expect(eventSelect).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#reg-name")).toBeVisible({ timeout: 5000 });
 
     await page.fill("#reg-name", "Duplicate Runner");
     await page.fill("#reg-email", "runner@example.com");
@@ -185,6 +201,24 @@ test.describe("SportXtreme Events Smoke Suite", () => {
   });
 
   test("7. /register handles EVENT_FULL error code from RPC", async ({ page }) => {
+    await page.route("**/rest/v1/events*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "00000000-0000-0000-0000-000000000001",
+            title: "National Marathon 2026",
+            status: "open",
+            event_date: "2026-12-31",
+            registration_deadline: "2026-12-01",
+            max_participants: 500,
+            registration_price: 499,
+          },
+        ]),
+      });
+    });
+
     await page.route("**/rest/v1/rpc/register_participant", async (route) => {
       await route.fulfill({
         status: 200,
@@ -204,10 +238,8 @@ test.describe("SportXtreme Events Smoke Suite", () => {
 
     await page.goto("/register");
     const eventSelect = page.locator("#reg-event-select");
-    const options = await eventSelect.locator("option").all();
-    if (options.length > 1) {
-      await eventSelect.selectOption({ index: 1 });
-    }
+    await expect(eventSelect).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#reg-name")).toBeVisible({ timeout: 5000 });
 
     await page.fill("#reg-name", "Late Runner");
     await page.fill("#reg-email", "late@example.com");
@@ -223,6 +255,24 @@ test.describe("SportXtreme Events Smoke Suite", () => {
   });
 
   test("8. /register handles REGISTRATION_CLOSED error code from RPC", async ({ page }) => {
+    await page.route("**/rest/v1/events*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "00000000-0000-0000-0000-000000000001",
+            title: "National Marathon 2026",
+            status: "open",
+            event_date: "2026-12-31",
+            registration_deadline: "2026-12-01",
+            max_participants: 500,
+            registration_price: 499,
+          },
+        ]),
+      });
+    });
+
     await page.route("**/rest/v1/rpc/register_participant", async (route) => {
       await route.fulfill({
         status: 200,
@@ -242,10 +292,8 @@ test.describe("SportXtreme Events Smoke Suite", () => {
 
     await page.goto("/register");
     const eventSelect = page.locator("#reg-event-select");
-    const options = await eventSelect.locator("option").all();
-    if (options.length > 1) {
-      await eventSelect.selectOption({ index: 1 });
-    }
+    await expect(eventSelect).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#reg-name")).toBeVisible({ timeout: 5000 });
 
     await page.fill("#reg-name", "Closed Runner");
     await page.fill("#reg-email", "closed@example.com");
@@ -261,12 +309,20 @@ test.describe("SportXtreme Events Smoke Suite", () => {
   });
 
   test("9. Protected admin route redirects unauthenticated users to /admin/login", async ({ page }) => {
+    await page.route("**/auth/v1/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ session: null, user: null }),
+      });
+    });
+
     await page.goto("/admin/dashboard");
-    await page.waitForURL("**/admin/login");
+    await page.waitForURL("**/admin/login", { timeout: 10000 });
     expect(page.url()).toContain("/admin/login");
 
     const loginBtn = page.getByRole("button", { name: /sign in|login|authenticate/i });
-    await expect(loginBtn).toBeVisible();
+    await expect(loginBtn).toBeVisible({ timeout: 5000 });
   });
 
   test("10. Zero unhandled console errors across all customer routes", async ({ page }) => {
