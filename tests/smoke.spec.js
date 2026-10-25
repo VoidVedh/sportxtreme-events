@@ -91,6 +91,24 @@ test.describe("SportXtreme Events Smoke Suite", () => {
   });
 
   test("5. /register mocks RPC success and displays ticket with in-browser QR code", async ({ page }) => {
+    await page.route("**/rest/v1/events*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "00000000-0000-0000-0000-000000000001",
+            title: "National Marathon 2026",
+            status: "open",
+            event_date: "2026-12-31",
+            registration_deadline: "2026-12-01",
+            max_participants: 500,
+            registration_price: 499,
+          },
+        ]),
+      });
+    });
+
     // Intercept RPC call to return successful ticket credentials without live DB mutation
     await page.route("**/rest/v1/rpc/register_participant", async (route) => {
       await route.fulfill({
@@ -113,7 +131,8 @@ test.describe("SportXtreme Events Smoke Suite", () => {
 
     // Wait for event options to load
     const eventSelect = page.locator("#reg-event-select");
-    await expect(eventSelect).toBeVisible();
+    await expect(eventSelect).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("#reg-name")).toBeVisible({ timeout: 5000 });
 
     // Select first available event if present
     const options = await eventSelect.locator("option").all();
