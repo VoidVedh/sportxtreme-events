@@ -44,11 +44,13 @@ export default function AdminLogin() {
   return (
     <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div className="bebas" style={{ fontSize: "2.5rem", marginBottom: 8 }}>
-            SPORT<span style={{ color: C.red }}>X</span>TREME
-          </div>
-          <div style={{ color: C.gray, fontSize: "0.85rem" }}>Admin Dashboard</div>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <img
+            src="/sportxtreme-logo.jpg"
+            alt="SportXtreme Events"
+            style={{ height: 56, maxWidth: 240, objectFit: "contain", marginBottom: 12 }}
+          />
+          <div style={{ color: C.gray, fontSize: "0.82rem", letterSpacing: "1.5px", textTransform: "uppercase" }}>Admin Dashboard</div>
         </div>
 
         <div style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)", padding: "40px 32px" }}>

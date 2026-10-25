@@ -119,12 +119,11 @@ export default function Navbar() {
           aria-label="SportXtreme Home"
           onKeyDown={(e) => e.key === "Enter" && handleNav("hero")}
         >
-          <div className="bebas" style={{ fontSize: "1.55rem", lineHeight: 1 }}>
-            SPORT<span style={{ color: "#E50914" }}>X</span>TREME
-          </div>
-          <div style={{ fontSize: "0.5rem", letterSpacing: "0.28em", color: "#A1A1AA", marginTop: 2 }}>
-            — THE PLAN BEHIND THE PLAY —
-          </div>
+          <img
+            src="/sportxtreme-logo.jpg"
+            alt="SportXtreme Events"
+            style={{ height: 38, maxWidth: 180, objectFit: "contain", display: "block" }}
+          />
         </div>
 
         {/* Desktop nav */}

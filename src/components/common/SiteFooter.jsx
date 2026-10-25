@@ -30,9 +30,9 @@ export default function SiteFooter() {
               src={SITE_CONFIG.brand.logoUrl}
               alt={SITE_CONFIG.brand.logoAlt}
               style={{
-                height: 38,
+                height: 48,
                 width: "auto",
-                maxWidth: 200,
+                maxWidth: 240,
                 objectFit: "contain",
                 marginBottom: 16,
               }}

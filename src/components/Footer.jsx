@@ -24,12 +24,11 @@ export default function Footer() {
 
         {/* Brand column */}
         <div>
-          <div className="bebas" style={{ fontSize: "1.9rem", letterSpacing: "0.04em", lineHeight: 1 }}>
-            SPORT<span style={{ color: C.red }}>X</span>TREME
-          </div>
-          <div style={{ fontSize: "0.52rem", letterSpacing: "0.26em", color: C.gray, marginTop: 2, marginBottom: 18 }}>
-            THE PLAN BEHIND THE PLAY
-          </div>
+          <img
+            src="/sportxtreme-logo.jpg"
+            alt="SportXtreme Events — The Plan Behind The Play"
+            style={{ height: 44, maxWidth: 220, objectFit: "contain", marginBottom: 18, display: "block" }}
+          />
           <p style={{ color: C.gray, fontSize: "0.8rem", lineHeight: 1.72, maxWidth: 280 }}>
             SportXtreme Events — Professional sports event management. Crafting premium corporate leagues, marathons, school championships, and tournaments.
           </p>

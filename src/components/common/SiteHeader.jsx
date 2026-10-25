@@ -127,9 +127,9 @@ export default function SiteHeader() {
             src={SITE_CONFIG.brand.logoUrl}
             alt={SITE_CONFIG.brand.logoAlt}
             style={{
-              height: 38,
+              height: 44,
               width: "auto",
-              maxWidth: 180,
+              maxWidth: 220,
               objectFit: "contain",
             }}
             priority

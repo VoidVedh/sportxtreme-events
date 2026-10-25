@@ -803,11 +803,18 @@ export default function AdminDashboard() {
     <div style={{ background: C.black, color: "#fff", fontFamily: "Inter, system-ui, sans-serif", minHeight: "100vh" }}>
       {/* Header */}
       <div style={{ background: "rgba(229,9,20,0.1)", borderBottom: "1px solid rgba(229,9,20,0.2)", padding: "16px 5%", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div className="bebas" style={{ fontSize: "1.5rem" }}>
-            SPORT<span style={{ color: C.red }}>X</span>TREME ADMIN
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img
+            src="/sportxtreme-logo.jpg"
+            alt="SportXtreme Events"
+            style={{ height: 36, maxWidth: 160, objectFit: "contain" }}
+          />
+          <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 12 }}>
+            <div style={{ fontSize: "0.72rem", color: C.gray, textTransform: "uppercase", letterSpacing: "1px" }}>
+              Admin Portal
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "#fff", marginTop: 2 }}>{adminEmail}</div>
           </div>
-          <div style={{ fontSize: "0.75rem", color: C.gray, marginTop: 4 }}>Logged in as: {adminEmail}</div>
         </div>
         <button onClick={handleLogout} style={{ background: "none", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", cursor: "pointer", fontSize: "0.85rem", transition: "all 0.3s" }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.red; e.currentTarget.style.color = C.red; }}
